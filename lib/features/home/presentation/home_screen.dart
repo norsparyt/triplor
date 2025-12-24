@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:triplor/features/home/providers/adventure_providers.dart';
 
 import '../domain/models/adventure_model.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
-//TODO redo UI
+  //TODO redo UI
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final adventuresAsync = ref.watch(adventureProvider);
@@ -88,6 +89,12 @@ class HomeScreen extends ConsumerWidget {
           return Center(child: Text('Error: $error'));
         },
         loading: () => Center(child: CircularProgressIndicator()),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.go('/createAdventure');
+        },
+        child: Icon(Icons.add),
       ),
     );
   }

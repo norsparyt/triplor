@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/chat/presentation/chats_screen.dart';
+import '../../features/home/presentation/create_adventure_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/requests/presentation/requests_screen.dart';
@@ -28,12 +29,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/chats',
             pageBuilder: (context, state) =>
-            const NoTransitionPage(child: ChatsScreen()),
+                const NoTransitionPage(child: ChatsScreen()),
           ),
           GoRoute(
             path: '/profile',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: ProfileScreen()),
+          ),
+          GoRoute(
+            path: '/createAdventure',
+            pageBuilder: (context, state) =>
+                NoTransitionPage(child: CreateAdventureScreen()),
           ),
         ],
       ),
