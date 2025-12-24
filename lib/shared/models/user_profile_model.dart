@@ -1,4 +1,3 @@
-
 import '../../features/home/domain/models/adventure_model.dart';
 import 'location_model.dart';
 
@@ -8,7 +7,7 @@ class UserProfileModel {
   final int age;
   final String avatarUrl;
   final LocationModel currentLocation;
-  final List<AdventureModel> adventures;
+  final List<Adventure> adventures;
 
   const UserProfileModel({
     required this.id,
