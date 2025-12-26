@@ -46,7 +46,7 @@ class CreateAdventureNotifer extends Notifier<CreateAdventureState> {
     }
   }
 
-  //todo what is this
+  //TODO: what is this
   void resetState() {
     state = CreateAdventureState();
   }

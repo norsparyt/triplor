@@ -38,11 +38,13 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
             ),
 
             SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => handleCreate(),
+            Container(
               child: state.isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text('Create Adventure'),
+                  ? CircularProgressIndicator(color: Colors.deepPurple)
+                  : ElevatedButton(
+                      onPressed: () => handleCreate(),
+                      child: Text('Create Adventure'),
+                    ),
             ),
           ],
         ),
