@@ -2,10 +2,15 @@ import '../../../../shared/models/date_range_model.dart';
 import '../../../../shared/models/location_model.dart';
 
 enum AdventureType {
-  backpacking,
-  leisure,
-  workation,
-  trekking,
+  Adventure(label: 'Adventure'),
+  Backpacking(label: 'Backpacking'),
+  Relaxing(label: 'Relaxing'),
+  Foodie(label: 'Foodie'),
+  Culture(label: 'Culture'),
+  Hiking(label: 'Hiking');
+
+  final String label;
+  const AdventureType({required this.label});
 }
 
 class Adventure {
@@ -16,7 +21,7 @@ class Adventure {
 
   final LocationModel location;
   final DateRangeModel dateRange;
-  final AdventureType type;
+  final Set<AdventureType> type;
   final String description;
 
   /// Optional but useful for feed

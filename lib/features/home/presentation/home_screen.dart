@@ -36,15 +36,9 @@ class HomeScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Location + Type
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${adventure[index].location.city}, ${adventure[index].location.country}',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            _TypeChip(type: adventure[index].type),
-                          ],
+                        Text(
+                          '${adventure[index].location.city}, ${adventure[index].location.country}',
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
 
                         const SizedBox(height: 8),
@@ -101,23 +95,5 @@ class HomeScreen extends ConsumerWidget {
 
   String _formatDateRange(DateTime start, DateTime end) {
     return '${start.day}/${start.month} - ${end.day}/${end.month}';
-  }
-}
-
-class _TypeChip extends StatelessWidget {
-  final AdventureType type;
-
-  const _TypeChip({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      label: Text(
-        type.name.toUpperCase(),
-        style: const TextStyle(fontSize: 12),
-      ),
-      backgroundColor: Colors.blue.shade50,
-      side: BorderSide.none,
-    );
   }
 }

@@ -17,7 +17,7 @@ class CreateAdventureNotifer extends Notifier<CreateAdventureState> {
     required String userId,
     required LocationModel location,
     required DateRangeModel dateRange,
-    required AdventureType type,
+    required Set<AdventureType> type,
     required String description,
     required int maxPeople,
   }) async {

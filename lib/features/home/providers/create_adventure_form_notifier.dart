@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:triplor/features/home/domain/models/adventure_model.dart';
 import 'package:triplor/features/home/providers/create_adventure_form_state.dart';
 
 class CreateAdventureFormNotifier extends Notifier<CreateAdventureFormState> {
@@ -11,16 +12,12 @@ class CreateAdventureFormNotifier extends Notifier<CreateAdventureFormState> {
     state = state.copyWith(location: location);
   }
 
-  void updateStartDate(DateTime date) {
-    state = state.copyWith(startDate: date);
+  void updateDates(DateTime startDate, DateTime endDate) {
+    state = state.copyWith(startDate: startDate, endDate: endDate);
   }
 
-  void updateEndDate(DateTime date) {
-    state = state.copyWith(endDate: date);
-  }
-
-  void toggleTripStyle(String style) {
-    final newStyles = Set<String>.from(state.selectedTripStyles);
+  void toggleTripStyle(AdventureType style) {
+    final newStyles = Set<AdventureType>.from(state.selectedTripStyles);
     if (newStyles.contains(style)) {
       newStyles.remove(style);
     } else {

@@ -23,5 +23,6 @@ final createAdventureProvider =
 
 final createAdventureFormProvider =
     NotifierProvider<CreateAdventureFormNotifier, CreateAdventureFormState>(
-      () => CreateAdventureFormNotifier(),
+      CreateAdventureFormNotifier.new,
+      isAutoDispose: true,
     );

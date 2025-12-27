@@ -1,8 +1,10 @@
+import 'package:triplor/features/home/domain/models/adventure_model.dart';
+
 class CreateAdventureFormState {
   final String location;
   final DateTime? startDate;
   final DateTime? endDate;
-  final Set<String> selectedTripStyles; // Multiple selection
+  final Set<AdventureType> selectedTripStyles; // Multiple selection
   final bool isGroupTrip; // true for Group Trip, false for Travel Buddy
   final int maxPeople;
   final String description;
@@ -11,17 +13,20 @@ class CreateAdventureFormState {
     this.location = '',
     this.startDate,
     this.endDate,
-    Set<String>? selectedTripStyles,
-    this.isGroupTrip = true,
+    Set<AdventureType>?
+    selectedTripStyles, //since set is mutable (in dart default parameters must be compile time constants)
+    this.isGroupTrip = false,
     this.maxPeople = 5,
     this.description = '',
-  }) : selectedTripStyles = selectedTripStyles ?? {};
+  }) : selectedTripStyles =
+           selectedTripStyles ??
+           {}; //assign the new set if null values is passed to constructor
 
   CreateAdventureFormState copyWith({
     String? location,
     DateTime? startDate,
     DateTime? endDate,
-    Set<String>? selectedTripStyles,
+    Set<AdventureType>? selectedTripStyles,
     bool? isGroupTrip,
     int? maxPeople,
     String? description,
@@ -35,5 +40,14 @@ class CreateAdventureFormState {
       maxPeople: maxPeople ?? this.maxPeople,
       description: description ?? this.description,
     );
+  }
+
+  //TODO: More validations??
+  bool get isValid {
+    return location.isNotEmpty &&
+        startDate != null &&
+        endDate != null &&
+        selectedTripStyles.isNotEmpty &&
+        description.isNotEmpty;
   }
 }
