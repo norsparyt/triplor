@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:triplor/features/home/providers/adventure_providers.dart';
 
-import '../domain/models/adventure_model.dart';
-
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
   //TODO redo UI

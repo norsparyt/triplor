@@ -1,7 +1,7 @@
 import '../../../../shared/models/date_range_model.dart';
 import '../../../../shared/models/location_model.dart';
 
-enum AdventureType {
+enum AdventureStyle {
   Adventure(label: 'Adventure'),
   Backpacking(label: 'Backpacking'),
   Relaxing(label: 'Relaxing'),
@@ -10,7 +10,7 @@ enum AdventureType {
   Hiking(label: 'Hiking');
 
   final String label;
-  const AdventureType({required this.label});
+  const AdventureStyle({required this.label});
 }
 
 class Adventure {
@@ -21,7 +21,9 @@ class Adventure {
 
   final LocationModel location;
   final DateRangeModel dateRange;
-  final Set<AdventureType> type;
+  final Set<AdventureStyle> styles;
+  //style= way of adventure ie the enum above
+  //whereas type= either solo or group adventure
   final String description;
 
   /// Optional but useful for feed
@@ -33,7 +35,7 @@ class Adventure {
     required this.userId,
     required this.location,
     required this.dateRange,
-    required this.type,
+    required this.styles,
     required this.description,
     this.maxPeople,
     this.isOpen = true,

@@ -30,6 +30,8 @@ class AppStrings {
       'Adventure created successfully!';
   static const String errorPrefix = 'Error: ';
   static const String dateFormat = 'MMM d';
+  static const String createAdventureValidationError =
+      'Please fill all required fields';
 
   //Routes
   static const String homeRoute = '/home';

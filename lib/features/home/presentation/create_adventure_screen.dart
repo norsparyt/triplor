@@ -24,6 +24,14 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
   final _descriptionController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    final formState = ref.read(createAdventureFormProvider);
+    _locationController.text = formState.location;
+    _descriptionController.text = formState.description;
+  }
+
+  @override
   void dispose() {
     _locationController.dispose();
     _descriptionController.dispose();
@@ -96,12 +104,12 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
             SizedBox(height: 32),
 
             // Max People
-            (formState.isGroupTrip)
+            (formState.isGroupAdventure)
                 ? _buildSectionTitle(AppStrings.maxPeople)
                 : Container(),
             SizedBox(height: 12),
 
-            (formState.isGroupTrip)
+            (formState.isGroupAdventure)
                 ? _buildPeopleCounter(formState)
                 : Container(),
             SizedBox(height: 32),
@@ -135,21 +143,21 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
     if (!formState.isValid) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please fill all required fields'),
-          backgroundColor: Colors.red,
+          content: Text(AppStrings.createAdventureValidationError),
+          backgroundColor: AppColors.primaryColorGlobal,
         ),
       );
       return;
     }
     await notifier.createAdventure(
-      userId: "",
+      userId: "temp",
       // TODO: Get from auth provider in real app
       location: LocationModel(city: formState.location, country: "Default"),
       dateRange: DateRangeModel(
         startDate: formState.startDate!,
         endDate: formState.endDate!,
       ),
-      type: formState.selectedTripStyles,
+      style: formState.selectedAdventureStyles,
       description: formState.description,
       maxPeople: formState.maxPeople,
       //TODO add parameter: is solo?
@@ -290,7 +298,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: date != null
-                ? AppColors.primaryColorGlobal.withOpacity(0.3)
+                ? AppColors.primaryColorGlobal.withValues(alpha: 0.3)
                 : AppColors.grey200,
           ),
         ),
@@ -326,13 +334,13 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: AdventureType.values.map((style) {
-        final isSelected = formState.selectedTripStyles.contains(style);
+      children: AdventureStyle.values.map((style) {
+        final isSelected = formState.selectedAdventureStyles.contains(style);
         return GestureDetector(
           onTap: () {
             ref
                 .read(createAdventureFormProvider.notifier)
-                .toggleTripStyle(style);
+                .toggleAdventureStyle(style);
           },
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -365,29 +373,29 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
     return Row(
       children: [
         Expanded(
-          child: _buildTripTypeCard(
+          child: _buildAdventureSizeCard(
             icon: Icons.person,
             title: AppStrings.travelBuddy,
             subtitle: AppStrings.travelBuddySubtitle,
-            isSelected: !formState.isGroupTrip,
+            isSelected: !formState.isGroupAdventure,
             onTap: () {
               ref
                   .read(createAdventureFormProvider.notifier)
-                  .toggleTripType(false);
+                  .toggleAdventureType(false);
             },
           ),
         ),
         SizedBox(width: 12),
         Expanded(
-          child: _buildTripTypeCard(
+          child: _buildAdventureSizeCard(
             icon: Icons.group,
             title: AppStrings.groupTrip,
             subtitle: AppStrings.groupTripSubtitle,
-            isSelected: formState.isGroupTrip,
+            isSelected: formState.isGroupAdventure,
             onTap: () {
               ref
                   .read(createAdventureFormProvider.notifier)
-                  .toggleTripType(true);
+                  .toggleAdventureType(true);
             },
           ),
         ),
@@ -395,7 +403,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
     );
   }
 
-  Widget _buildTripTypeCard({
+  Widget _buildAdventureSizeCard({
     required IconData icon,
     required String title,
     required String subtitle,

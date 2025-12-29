@@ -42,7 +42,7 @@ class FakeAdventureRepository {
       userId: adventure.userId,
       location: adventure.location,
       dateRange: adventure.dateRange,
-      type: adventure.type,
+      styles: adventure.styles,
       description: adventure.description,
       maxPeople: adventure.maxPeople,
     );

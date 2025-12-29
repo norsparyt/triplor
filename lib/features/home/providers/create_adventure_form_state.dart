@@ -4,8 +4,9 @@ class CreateAdventureFormState {
   final String location;
   final DateTime? startDate;
   final DateTime? endDate;
-  final Set<AdventureType> selectedTripStyles; // Multiple selection
-  final bool isGroupTrip; // true for Group Trip, false for Travel Buddy
+  final Set<AdventureStyle> selectedAdventureStyles; // Multiple selection
+  final bool
+  isGroupAdventure; // true for Group Adventure, false for Travel Buddy
   final int maxPeople;
   final String description;
 
@@ -13,21 +14,21 @@ class CreateAdventureFormState {
     this.location = '',
     this.startDate,
     this.endDate,
-    Set<AdventureType>?
-    selectedTripStyles, //since set is mutable (in dart default parameters must be compile time constants)
-    this.isGroupTrip = false,
+    Set<AdventureStyle>?
+    selectedAdventureStyles, //since set is mutable (in dart default parameters must be compile time constants)
+    this.isGroupAdventure = false,
     this.maxPeople = 5,
     this.description = '',
-  }) : selectedTripStyles =
-           selectedTripStyles ??
+  }) : selectedAdventureStyles =
+           selectedAdventureStyles ??
            {}; //assign the new set if null values is passed to constructor
 
   CreateAdventureFormState copyWith({
     String? location,
     DateTime? startDate,
     DateTime? endDate,
-    Set<AdventureType>? selectedTripStyles,
-    bool? isGroupTrip,
+    Set<AdventureStyle>? selectedAdventureStyles,
+    bool? isGroupAdventure,
     int? maxPeople,
     String? description,
   }) {
@@ -35,8 +36,9 @@ class CreateAdventureFormState {
       location: location ?? this.location,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
-      selectedTripStyles: selectedTripStyles ?? this.selectedTripStyles,
-      isGroupTrip: isGroupTrip ?? this.isGroupTrip,
+      selectedAdventureStyles:
+          selectedAdventureStyles ?? this.selectedAdventureStyles,
+      isGroupAdventure: isGroupAdventure ?? this.isGroupAdventure,
       maxPeople: maxPeople ?? this.maxPeople,
       description: description ?? this.description,
     );
@@ -47,7 +49,7 @@ class CreateAdventureFormState {
     return location.isNotEmpty &&
         startDate != null &&
         endDate != null &&
-        selectedTripStyles.isNotEmpty &&
+        selectedAdventureStyles.isNotEmpty &&
         description.isNotEmpty;
   }
 }
