@@ -7,7 +7,7 @@ import '../domain/models/adventure_model.dart';
 import 'adventure_providers.dart';
 import 'create_adventure_state.dart';
 
-class CreateAdventureNotifer extends Notifier<CreateAdventureState> {
+class CreateAdventureNotifier extends Notifier<CreateAdventureState> {
   @override
   CreateAdventureState build() {
     return CreateAdventureState();

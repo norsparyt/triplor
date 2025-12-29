@@ -29,6 +29,7 @@ class Adventure {
   /// Optional but useful for feed
   final int? maxPeople;
   final bool isOpen;
+  //todo use case
 
   const Adventure({
     required this.id,

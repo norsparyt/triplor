@@ -17,8 +17,8 @@ final adventureProvider = FutureProvider<List<Adventure>>((ref) async {
 });
 
 final createAdventureProvider =
-    NotifierProvider<CreateAdventureNotifer, CreateAdventureState>(
-      CreateAdventureNotifer.new,
+    NotifierProvider<CreateAdventureNotifier, CreateAdventureState>(
+      CreateAdventureNotifier.new,
     );
 
 final createAdventureFormProvider =

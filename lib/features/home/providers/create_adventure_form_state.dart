@@ -16,8 +16,8 @@ class CreateAdventureFormState {
     this.endDate,
     Set<AdventureStyle>?
     selectedAdventureStyles, //since set is mutable (in dart default parameters must be compile time constants)
-    this.isGroupAdventure = false,
-    this.maxPeople = 5,
+    this.isGroupAdventure = false, //default solo trip= matches UI
+    this.maxPeople = 1, //default solo trip
     this.description = '',
   }) : selectedAdventureStyles =
            selectedAdventureStyles ??
@@ -36,8 +36,9 @@ class CreateAdventureFormState {
       location: location ?? this.location,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
-      selectedAdventureStyles:
-          selectedAdventureStyles ?? this.selectedAdventureStyles,
+      selectedAdventureStyles: selectedAdventureStyles != null
+          ? Set.of(selectedAdventureStyles)
+          : Set.of(this.selectedAdventureStyles),
       isGroupAdventure: isGroupAdventure ?? this.isGroupAdventure,
       maxPeople: maxPeople ?? this.maxPeople,
       description: description ?? this.description,

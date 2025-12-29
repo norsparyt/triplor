@@ -28,7 +28,10 @@ class CreateAdventureFormNotifier extends Notifier<CreateAdventureFormState> {
   // style= hiking, relxed etc
 
   void toggleAdventureType(bool isGroupAdventure) {
-    state = state.copyWith(isGroupAdventure: isGroupAdventure);
+    if (isGroupAdventure)
+      state = state.copyWith(isGroupAdventure: isGroupAdventure, maxPeople: 3);
+    else
+      state = state.copyWith(isGroupAdventure: isGroupAdventure, maxPeople: 1);
   }
   //type = solo or group
 
