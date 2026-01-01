@@ -35,4 +35,5 @@ class AppStrings {
 
   //Routes
   static const String homeRoute = '/home';
+  static const String adventureDetails = 'adventureDetails';
 }

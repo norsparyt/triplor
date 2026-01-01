@@ -11,9 +11,17 @@ final adventureRepositoryProvider = Provider<FakeAdventureRepository>((ref) {
   return FakeAdventureRepository();
 });
 
-final adventureProvider = FutureProvider<List<Adventure>>((ref) async {
+final allAdventuresProvider = FutureProvider<List<Adventure>>((ref) async {
   final repository = ref.watch(adventureRepositoryProvider);
   return await repository.fetchAdventures();
+});
+
+final adventureDetailProvider = FutureProvider.family<Adventure, String>((
+  ref,
+  id,
+) async {
+  final repository = ref.read(adventureRepositoryProvider);
+  return await repository.fetchAdventureDetail(id);
 });
 
 final createAdventureProvider =

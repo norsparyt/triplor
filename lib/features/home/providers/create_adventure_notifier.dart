@@ -40,7 +40,7 @@ class CreateAdventureNotifier extends Notifier<CreateAdventureState> {
         isLoading: false,
         createdAdventure: createdAdventure,
       );
-      ref.invalidate(adventureProvider);
+      ref.invalidate(allAdventuresProvider);
     } catch (error) {
       state = state.copyWith(isLoading: false, error: error.toString());
     }

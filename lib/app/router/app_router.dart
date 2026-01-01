@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/chat/presentation/chats_screen.dart';
+import '../../features/home/presentation/adventure_details_screen.dart';
 import '../../features/home/presentation/create_adventure_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
@@ -40,6 +41,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: '/createAdventure',
             pageBuilder: (context, state) =>
                 NoTransitionPage(child: CreateAdventureScreen()),
+          ),
+          GoRoute(
+            path: '/adventure/:id',
+            name: 'adventureDetails',
+            builder: (context, state) {
+              final adventureId = state.pathParameters['id']!;
+              return AdventureDetailsScreen(adventureId: adventureId);
+            },
           ),
         ],
       ),

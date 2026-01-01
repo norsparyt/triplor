@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:triplor/features/home/providers/adventure_providers.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../domain/models/adventure_model.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -12,7 +13,7 @@ class HomeScreen extends ConsumerWidget {
   //TODO redo UI
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final adventuresAsync = ref.watch(adventureProvider);
+    final adventuresAsync = ref.watch(allAdventuresProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('My Adventures')),
       body: adventuresAsync.when(
@@ -25,6 +26,7 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   SizedBox(height: 16),
                   AdventureCard(
+                    id: adventure[index].id,
                     title: adventure[index].location.displayName,
                     date: _formatDateRange(adventure[index]),
                     type: adventure[index].styles.first.label,
@@ -81,6 +83,7 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class AdventureCard extends StatelessWidget {
+  final String id;
   final String title;
   final String date;
   final String type;
@@ -91,6 +94,7 @@ class AdventureCard extends StatelessWidget {
 
   const AdventureCard({
     super.key,
+    required this.id,
     required this.title,
     required this.date,
     required this.type,
@@ -102,52 +106,58 @@ class AdventureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 260,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradient,
-        ),
+    return InkWell(
+      onTap: () => context.goNamed(
+        AppStrings.adventureDetails,
+        pathParameters: {'id': id},
       ),
-      child: Stack(
-        children: [
-          // Top badges
-          Positioned(top: 16, left: 16, child: _Pill(text: badgeText)),
-          Positioned(top: 16, right: 16, child: _Pill(text: status)),
-
-          // Bottom content
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _InfoChip(icon: Icons.calendar_today, label: date),
-                    _InfoChip(icon: Icons.person, label: travelMode),
-                    _InfoChip(icon: Icons.explore, label: type),
-                  ],
-                ),
-              ],
-            ),
+      child: Container(
+        height: 260,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradient,
           ),
-        ],
+        ),
+        child: Stack(
+          children: [
+            // Top badges
+            Positioned(top: 16, left: 16, child: _Pill(text: badgeText)),
+            Positioned(top: 16, right: 16, child: _Pill(text: status)),
+
+            // Bottom content
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _InfoChip(icon: Icons.calendar_today, label: date),
+                      _InfoChip(icon: Icons.person, label: travelMode),
+                      _InfoChip(icon: Icons.explore, label: type),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
