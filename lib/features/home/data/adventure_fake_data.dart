@@ -15,6 +15,7 @@ class FakeAdventureRepository {
       ),
       styles: {AdventureStyle.Backpacking, AdventureStyle.Culture},
       description: "Hi lets goo!",
+      maxPeople: 5,
     ),
   ];
   //GET METHOD
