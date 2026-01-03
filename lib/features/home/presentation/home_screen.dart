@@ -51,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          context.go('/createAdventure');
+          context.push('/createAdventure');
         },
         backgroundColor: Color(0xFF2196F3),
         icon: Icon(Icons.add, color: Colors.white),
@@ -107,7 +107,7 @@ class AdventureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.goNamed(
+      onTap: () => context.pushNamed(
         AppStrings.adventureDetails,
         pathParameters: {'id': id},
       ),

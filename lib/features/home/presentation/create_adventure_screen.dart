@@ -52,7 +52,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
         backgroundColor: AppColors.globalWhite,
         elevation: 0,
         leading: TextButton(
-          onPressed: () => context.go(AppStrings.homeRoute),
+          onPressed: () => context.pop(),
           child: Text(
             AppStrings.cancelCreateAdventure,
             style: TextStyle(color: AppColors.grey700, fontSize: 16),
@@ -169,7 +169,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppStrings.adventureCreatedSuccess)),
       );
-      context.go(AppStrings.homeRoute);
+      context.pop();
     } else if (state.error != null && mounted) {
       // Error occurred
       ScaffoldMessenger.of(context).showSnackBar(

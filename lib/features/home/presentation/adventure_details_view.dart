@@ -1,25 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:triplor/features/home/domain/models/adventure_model.dart';
+import 'package:triplor/shared/models/date_range_model.dart';
 
 import '../../../app/widgets/adventure_style_chip.dart';
-import '../../../core/constants/app_strings.dart';
 
-class AdventureDetailsView extends StatefulWidget {
+// TODO: Replace all network images with adventure.coverImageUrl when available
+
+class AdventureDetailsView extends StatelessWidget {
   final Adventure adventure;
   const AdventureDetailsView({super.key, required this.adventure});
-
-  @override
-  State<AdventureDetailsView> createState() =>
-      _AdventureDetailsViewState(adventure: adventure);
-}
-
-class _AdventureDetailsViewState extends State<AdventureDetailsView> {
-  final Adventure adventure;
-  _AdventureDetailsViewState({required this.adventure});
-  bool isFavorite = false;
-  bool showFullDescription = false;
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +125,7 @@ class _AdventureDetailsViewState extends State<AdventureDetailsView> {
                         Shadow(
                           offset: Offset(0, 2),
                           blurRadius: 8,
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                         ),
                       ],
                     ),
@@ -163,51 +153,13 @@ class _AdventureDetailsViewState extends State<AdventureDetailsView> {
               // Back button
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   icon: Icon(Icons.arrow_back, color: Colors.black),
-                  onPressed: () => context.go(AppStrings.homeRoute),
+                  onPressed: () => context.pop(),
                 ),
-              ),
-
-              Row(
-                children: [
-                  // Favorite button
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavorite ? Colors.red : Colors.black,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          isFavorite = !isFavorite;
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 8),
-
-                  // Share button
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.share, color: Colors.black),
-                      onPressed: () {
-                        // TODO: Implement share functionality
-                      },
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
@@ -232,7 +184,7 @@ class _AdventureDetailsViewState extends State<AdventureDetailsView> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.25),
+              color: Colors.black.withValues(alpha: 0.25),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -257,7 +209,7 @@ class _AdventureDetailsViewState extends State<AdventureDetailsView> {
                     icon: Icons.calendar_today,
                     iconColor: Color(0xFFFF9800),
                     label: 'DATES',
-                    value: _formatDateRange(adventure),
+                    value: DateRangeModel.formatDateRange(adventure.dateRange),
                   ),
                 ),
                 // Container(width: 1, height: 50, color: Colors.grey[200]),
@@ -351,7 +303,7 @@ class _AdventureDetailsViewState extends State<AdventureDetailsView> {
         Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: iconColor, size: 20),
@@ -435,29 +387,7 @@ class _AdventureDetailsViewState extends State<AdventureDetailsView> {
               color: Colors.grey[700],
               height: 1.6,
             ),
-            maxLines: showFullDescription ? null : 3,
-            overflow: showFullDescription ? null : TextOverflow.ellipsis,
           ),
-          if (adventure.description.length > 200)
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  showFullDescription = !showFullDescription;
-                });
-              },
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: Size(0, 0),
-              ),
-              child: Text(
-                showFullDescription ? 'Read less' : 'Read more',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF2196F3),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -581,12 +511,5 @@ class _AdventureDetailsViewState extends State<AdventureDetailsView> {
         ],
       ),
     );
-  }
-
-  String _formatDateRange(Adventure adventure) {
-    final formatter = DateFormat('MMM d');
-    final start = formatter.format(adventure.dateRange.startDate);
-    final end = DateFormat('MMM d').format(adventure.dateRange.endDate);
-    return '$start - $end';
   }
 }

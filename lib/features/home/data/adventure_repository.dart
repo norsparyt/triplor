@@ -3,35 +3,43 @@ import 'package:triplor/shared/models/location_model.dart';
 
 import '../domain/models/adventure_model.dart';
 
-class FakeAdventureRepository {
-  List<Adventure> fakeAdventures = [
-    Adventure(
-      id: "1",
-      userId: "2",
-      location: LocationModel(city: "Goa", country: "India"),
-      dateRange: DateRangeModel(
-        startDate: DateTime.now(),
-        endDate: DateTime.now().add(Duration(days: 7)),
+class AdventureRepository {
+  final List<Adventure> _cache = [];
+
+  FakeAdventureRepository() {
+    _cache.addAll([
+      Adventure(
+        id: "1",
+        userId: "2",
+        location: LocationModel(city: "Goa", country: "India"),
+        dateRange: DateRangeModel(
+          startDate: DateTime.now(),
+          endDate: DateTime.now().add(const Duration(days: 7)),
+        ),
+        styles: {AdventureStyle.Backpacking, AdventureStyle.Culture},
+        description:
+            "Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo!",
+        maxPeople: 5,
       ),
-      styles: {AdventureStyle.Backpacking, AdventureStyle.Culture},
-      description: "Hi lets goo!",
-      maxPeople: 5,
-    ),
-  ];
-  //GET METHOD
-  Future<List<Adventure>> fetchAdventures() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return fakeAdventures;
+    ]);
   }
 
-  //todo check if this is needed as async
-  Future<Adventure> fetchAdventureDetail(String id) async {
+  // Simulates network once, returns cached list
+  Future<List<Adventure>> fetchAdventures() async {
+    if (_cache.isNotEmpty) {
+      return _cache;
+    }
+
     await Future.delayed(const Duration(milliseconds: 500));
-    final adventure = fakeAdventures.firstWhere(
+    return _cache;
+  }
+
+  /// Cached read → SHOULD NOT be async
+  Adventure getAdventureById(String id) {
+    return _cache.firstWhere(
       (a) => a.id == id,
       orElse: () => throw Exception('Adventure not found'),
     );
-    return adventure;
   }
 
   //POST Method
@@ -48,10 +56,7 @@ class FakeAdventureRepository {
       description: adventure.description,
       maxPeople: adventure.maxPeople,
     );
-    fakeAdventures.insert(0, newAdventure);
-    for (Adventure adventure in fakeAdventures) {
-      print(adventure.location.displayName);
-    }
+    _cache.insert(0, newAdventure);
     return newAdventure;
   }
 }
