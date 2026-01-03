@@ -6,7 +6,7 @@ import '../domain/models/adventure_model.dart';
 class AdventureRepository {
   final List<Adventure> _cache = [];
 
-  FakeAdventureRepository() {
+  AdventureRepository() {
     _cache.addAll([
       Adventure(
         id: "1",
