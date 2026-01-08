@@ -161,6 +161,17 @@ class AdventureDetailsView extends StatelessWidget {
                   onPressed: () => context.pop(),
                 ),
               ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: Icon(Icons.edit, color: Colors.black),
+                  onPressed: () =>
+                      context.push('/editAdventure/${adventure.id}'),
+                ),
+              ),
             ],
           ),
         ),

@@ -27,7 +27,7 @@ class Adventure {
   final String description;
 
   /// Optional but useful for feed
-  final int? maxPeople;
+  final int maxPeople;
   final bool isOpen;
   //todo use case
 
@@ -38,7 +38,11 @@ class Adventure {
     required this.dateRange,
     required this.styles,
     required this.description,
-    this.maxPeople,
+    required this.maxPeople,
     this.isOpen = true,
   });
+  @override
+  String toString() {
+    return 'Adventure(id: $id, userId: $userId, location: $location, dateRange: $dateRange, styles: $styles, description: $description, maxPeople: $maxPeople)';
+  }
 }

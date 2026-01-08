@@ -38,9 +38,29 @@ class CreateAdventureNotifier extends Notifier<CreateAdventureState> {
       //fetched the created adventure
       state = state.copyWith(
         isLoading: false,
-        createdAdventure: createdAdventure,
+        lastSavedAdventure: createdAdventure,
       );
       ref.invalidate(allAdventuresProvider);
+    } catch (error) {
+      state = state.copyWith(isLoading: false, error: error.toString());
+    }
+  }
+
+  Future<void> updateAdventure(Adventure adventure) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final repository = ref.read(adventureRepositoryProvider);
+
+      final updatedAdventure = await repository.updateAdventure(
+        adventure: adventure,
+      );
+      //fetched the updated adventure
+      state = state.copyWith(
+        isLoading: false,
+        lastSavedAdventure: updatedAdventure,
+      );
+      ref.invalidate(allAdventuresProvider);
+      ref.invalidate(adventureDetailProvider(adventure.id));
     } catch (error) {
       state = state.copyWith(isLoading: false, error: error.toString());
     }

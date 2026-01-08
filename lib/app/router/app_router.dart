@@ -50,6 +50,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               return AdventureDetailsScreen(adventureId: adventureId);
             },
           ),
+          GoRoute(
+            path: '/editAdventure/:id',
+            builder: (context, state) {
+              final adventureId = state.pathParameters['id']!;
+              return CreateAdventureScreen(
+                adventureId: adventureId,
+              ); //Reusing Create Adventure Screen for edit
+            },
+          ),
         ],
       ),
     ],

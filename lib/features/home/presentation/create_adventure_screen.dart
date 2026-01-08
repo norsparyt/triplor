@@ -13,8 +13,12 @@ import '../providers/adventure_providers.dart';
 import '../providers/create_adventure_form_state.dart';
 
 class CreateAdventureScreen extends ConsumerStatefulWidget {
+  final String? adventureId;
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
+  const CreateAdventureScreen({super.key, this.adventureId});
+  bool get isEditMode => adventureId != null;
+  @override
+  ConsumerState<CreateAdventureScreen> createState() =>
       _CreateAdventureScreen();
 }
 
@@ -22,13 +26,35 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
   final _scrollController = ScrollController();
   final _locationController = TextEditingController();
   final _descriptionController = TextEditingController();
+  bool _hasPopulated = false; // ← Guard flag to prevent re-population
 
   @override
   void initState() {
     super.initState();
-    final formState = ref.read(createAdventureFormProvider);
-    _locationController.text = formState.location;
-    _descriptionController.text = formState.description;
+
+    // Only reset form in create mode
+    if (!widget.isEditMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _resetForm();
+      });
+    }
+  }
+
+  void _populateForm(Adventure adventure) {
+    // Populate form state
+    ref
+        .read(createAdventureFormProvider.notifier)
+        .populateFromAdventure(adventure);
+
+    // Sync text controllers
+    _locationController.text = adventure.location.city;
+    _descriptionController.text = adventure.description;
+  }
+
+  void _resetForm() {
+    ref.read(createAdventureFormProvider.notifier).reset();
+    _locationController.clear();
+    _descriptionController.clear();
   }
 
   @override
@@ -46,6 +72,60 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
     final createAdventureState = ref.watch(createAdventureProvider);
     final formState = ref.watch(createAdventureFormProvider);
 
+    // ✅ WATCH the adventure data (reactive)
+    if (widget.isEditMode) {
+      final adventureAsync = ref.watch(
+        adventureDetailProvider(widget.adventureId!),
+      );
+
+      // Handle the async state
+      adventureAsync.when(
+        data: (adventure) {
+          // ✅ Guard flag prevents re-population on every rebuild
+          if (!_hasPopulated) {
+            // Schedule population for next frame to avoid build-time state changes
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _populateForm(adventure);
+              setState(() {
+                _hasPopulated = true;
+              });
+            });
+          }
+        },
+        loading: () {
+          // Show loading indicator while fetching adventure
+          return Scaffold(
+            appBar: AppBar(title: Text('Loading...')),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primaryColorGlobal,
+              ),
+            ),
+          );
+        },
+        error: (error, stack) {
+          // Show error state
+          return Scaffold(
+            appBar: AppBar(title: Text('Error')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 60, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text('Failed to load adventure'),
+                  SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => context.pop(),
+                    child: Text('Go Back'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.globalWhite,
       appBar: AppBar(
@@ -60,7 +140,10 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
         ),
         leadingWidth: 80,
         title: Text(
-          AppStrings.createAdventureHeading,
+          widget.isEditMode
+              ? AppStrings
+                    .editAdventureHeading // 'Edit Adventure'
+              : AppStrings.createAdventureHeading, // 'Create Adventure'
           style: TextStyle(
             color: AppColors.globalBlack,
             fontSize: 18,
@@ -135,7 +218,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
   }
 
   // Functions start here
-  void handleCreate() async {
+  void handleSave() async {
     //get the notifier of the provider (to use the model class's methods etc)
     final notifier = ref.read(createAdventureProvider.notifier);
     final formState = ref.read(createAdventureFormProvider);
@@ -149,23 +232,43 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
       );
       return;
     }
-    await notifier.createAdventure(
-      userId: "temp",
-      // TODO: Get from auth provider in real app
-      location: LocationModel(city: formState.location, country: "Default"),
-      dateRange: DateRangeModel(
-        startDate: formState.startDate!,
-        endDate: formState.endDate!,
-      ),
-      style: formState.selectedAdventureStyles,
-      description: formState.description,
-      maxPeople: formState.maxPeople,
-      //TODO add parameter: is solo?
-    );
+    if (widget.isEditMode) {
+      // UPDATE existing adventure
+      await notifier.updateAdventure(
+        Adventure(
+          id: widget.adventureId!,
+          //todo change this to user id
+          userId: 'temp',
+          location: LocationModel(city: formState.location, country: "Default"),
+          dateRange: DateRangeModel(
+            startDate: formState.startDate!,
+            endDate: formState.endDate!,
+          ),
+          styles: formState.selectedAdventureStyles,
+          description: formState.description,
+          maxPeople: formState.maxPeople,
+        ),
+      );
+    } else {
+      // CREATE new adventure
+      await notifier.createAdventure(
+        userId: "temp",
+        // TODO: Get from auth provider in real app
+        location: LocationModel(city: formState.location, country: "Default"),
+        dateRange: DateRangeModel(
+          startDate: formState.startDate!,
+          endDate: formState.endDate!,
+        ),
+        style: formState.selectedAdventureStyles,
+        description: formState.description,
+        maxPeople: formState.maxPeople,
+        //TODO add parameter: is solo?
+      );
+    }
 
     //get the state of the provider
     final state = ref.read(createAdventureProvider);
-    if (state.createdAdventure != null && mounted) {
+    if (state.lastSavedAdventure != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppStrings.adventureCreatedSuccess)),
       );
@@ -606,7 +709,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: isButtonEnabled ? () => handleCreate() : null,
+        onPressed: isButtonEnabled ? () => handleSave() : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryColorGlobal,
           disabledBackgroundColor: AppColors.grey300,
@@ -618,7 +721,10 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
         child: (createAdventureState.isLoading)
             ? CircularProgressIndicator(color: Colors.white)
             : Text(
-                AppStrings.saveAdventure,
+                widget.isEditMode
+                    ? AppStrings
+                          .updateAdventure // 'Update Adventure'
+                    : AppStrings.createAdventure, // 'Create Adventure'
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,

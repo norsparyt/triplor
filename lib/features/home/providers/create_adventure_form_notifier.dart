@@ -25,7 +25,7 @@ class CreateAdventureFormNotifier extends Notifier<CreateAdventureFormState> {
     }
     state = state.copyWith(selectedAdventureStyles: newStyles);
   }
-  // style= hiking, relxed etc
+  // style= hiking, relaxed etc
 
   void toggleAdventureType(bool isGroupAdventure) {
     if (isGroupAdventure)
@@ -51,7 +51,19 @@ class CreateAdventureFormNotifier extends Notifier<CreateAdventureFormState> {
     state = state.copyWith(description: description);
   }
 
-  // void reset() {
-  //   state = CreateAdventureFormState();
-  // }
+  void populateFromAdventure(Adventure adventure) {
+    state = CreateAdventureFormState(
+      location: adventure.location.city,
+      startDate: adventure.dateRange.startDate,
+      endDate: adventure.dateRange.endDate,
+      selectedAdventureStyles: adventure.styles.toSet(),
+      isGroupAdventure: adventure.maxPeople > 1,
+      maxPeople: adventure.maxPeople,
+      description: adventure.description,
+    );
+  }
+
+  void reset() {
+    state = CreateAdventureFormState();
+  }
 }

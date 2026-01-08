@@ -26,11 +26,13 @@ class AdventureRepository {
 
   // Simulates network once, returns cached list
   Future<List<Adventure>> fetchAdventures() async {
+    //todo redundant since constructor seed
     if (_cache.isNotEmpty) {
       return _cache;
     }
 
     await Future.delayed(const Duration(milliseconds: 500));
+    _cache.forEach((adventure) => print(adventure.toString()));
     return _cache;
   }
 
@@ -57,6 +59,32 @@ class AdventureRepository {
       maxPeople: adventure.maxPeople,
     );
     _cache.insert(0, newAdventure);
+    _cache.forEach((adventure) => print(adventure.toString()));
     return newAdventure;
+  }
+
+  Future<Adventure> updateAdventure({required Adventure adventure}) async {
+    await Future.delayed(const Duration(seconds: 1));
+
+    final index = _cache.indexWhere((a) => a.id == adventure.id);
+    if (index == -1) {
+      throw Exception('Adventure not found');
+    }
+
+    final existing = _cache[index];
+
+    final updatedAdventure = Adventure(
+      id: existing.id,
+      userId: existing.userId,
+      location: adventure.location,
+      dateRange: adventure.dateRange,
+      styles: adventure.styles,
+      description: adventure.description,
+      maxPeople: adventure.maxPeople,
+    );
+
+    _cache[index] = updatedAdventure;
+    _cache.forEach((adventure) => print(adventure.toString()));
+    return updatedAdventure;
   }
 }

@@ -33,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
                     travelMode: adventure[index].maxPeople == 1
                         ? 'Solo'
                         : 'Group Trip',
-                    status: 'PLANNING',
+                    status: 'Edit',
                     //todo feature implementation
                     badgeText: '5 Interested',
                     //todo feature implementation
@@ -112,7 +112,7 @@ class AdventureCard extends StatelessWidget {
         pathParameters: {'id': id},
       ),
       child: Container(
-        height: 260,
+        height: 200,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
@@ -124,8 +124,16 @@ class AdventureCard extends StatelessWidget {
         child: Stack(
           children: [
             // Top badges
-            Positioned(top: 16, left: 16, child: _Pill(text: badgeText)),
-            Positioned(top: 16, right: 16, child: _Pill(text: status)),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: _Pill(text: badgeText, id: id),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: _Pill(text: status, id: id),
+            ),
 
             // Bottom content
             Positioned(
@@ -145,12 +153,12 @@ class AdventureCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Wrap(
-                    spacing: 8,
+                    spacing: 12,
                     runSpacing: 8,
                     children: [
                       _InfoChip(icon: Icons.calendar_today, label: date),
                       _InfoChip(icon: Icons.person, label: travelMode),
-                      _InfoChip(icon: Icons.explore, label: type),
+                      // _InfoChip(icon: Icons.explore, label: type),
                     ],
                   ),
                 ],
@@ -165,23 +173,28 @@ class AdventureCard extends StatelessWidget {
 
 class _Pill extends StatelessWidget {
   final String text;
+  final String id;
 
-  const _Pill({required this.text});
+  const _Pill({required this.text, required this.id});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+    return InkWell(
+      onTap: () => context.push('/editAdventure/${id}'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          border: BoxBorder.all(color: Colors.white),
+          // color: Colors.black.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -203,6 +216,7 @@ class _InfoChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 4),

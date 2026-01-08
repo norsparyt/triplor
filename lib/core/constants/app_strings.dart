@@ -6,6 +6,7 @@ class AppStrings {
 
   //Create Adventure Screen Strings
   static const String createAdventureHeading = 'Create Adventure';
+  static const String editAdventureHeading = 'Edit Adventure';
   static const String cancelCreateAdventure = 'Cancel';
   static const String whereTo = 'Where to?';
   static const String tripStyle = 'Trip Style';
@@ -25,7 +26,8 @@ class AppStrings {
       'Share a bit about your itinerary or what kind of travel buddy you are looking for...';
   static const String safetyMessage =
       'Your trip details are visible only to verified users to ensure safety and trust within the community.';
-  static const String saveAdventure = 'Save Adventure';
+  static const String createAdventure = 'Create Adventure';
+  static const String updateAdventure = 'Update Adventure';
   static const String adventureCreatedSuccess =
       'Adventure created successfully!';
   static const String errorPrefix = 'Error: ';
