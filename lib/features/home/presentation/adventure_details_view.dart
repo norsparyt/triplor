@@ -9,7 +9,12 @@ import '../../../app/widgets/adventure_style_chip.dart';
 
 class AdventureDetailsView extends StatelessWidget {
   final Adventure adventure;
-  const AdventureDetailsView({super.key, required this.adventure});
+  final VoidCallback onDeletePressed;
+  const AdventureDetailsView({
+    super.key,
+    required this.adventure,
+    required this.onDeletePressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +172,18 @@ class AdventureDetailsView extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
+                  icon: Icon(Icons.delete, color: Colors.black),
+                  onPressed: () async {
+                    return _buildDeleteBox(context);
+                  },
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
                   icon: Icon(Icons.edit, color: Colors.black),
                   onPressed: () =>
                       context.push('/editAdventure/${adventure.id}'),
@@ -176,6 +193,40 @@ class AdventureDetailsView extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _buildDeleteBox(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        // Use different name to avoid confusion
+        return AlertDialog(
+          title: const Text('Delete Adventure'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Are you sure you want to remove this adventure?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(), // Just close dialog
+            ),
+            TextButton(
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Close dialog first
+                onDeletePressed(); // Then execute the callback
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

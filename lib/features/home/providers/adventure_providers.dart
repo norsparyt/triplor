@@ -6,6 +6,8 @@ import 'create_adventure_form_notifier.dart';
 import 'create_adventure_form_state.dart';
 import 'create_adventure_notifier.dart';
 import 'create_adventure_state.dart';
+import 'delete_adventure_notifier.dart';
+import 'delete_adventure_state.dart';
 
 final adventureRepositoryProvider = Provider<AdventureRepository>((ref) {
   return AdventureRepository();
@@ -33,4 +35,9 @@ final createAdventureFormProvider =
     NotifierProvider<CreateAdventureFormNotifier, CreateAdventureFormState>(
       CreateAdventureFormNotifier.new,
       isAutoDispose: true,
+    );
+
+final deleteAdventureProvider =
+    NotifierProvider<DeleteAdventureNotifier, DeleteAdventureState>(
+      DeleteAdventureNotifier.new,
     );

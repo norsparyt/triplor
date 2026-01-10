@@ -24,7 +24,10 @@ class _AdventureDetailsScreenState
     );
 
     return adventureAsync.when(
-      data: (adventure) => AdventureDetailsView(adventure: adventure),
+      data: (adventure) => AdventureDetailsView(
+        adventure: adventure,
+        onDeletePressed: () => _handleDelete(adventure.id),
+      ),
       loading: () => Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: Color(0xFF2196F3)),
@@ -48,5 +51,30 @@ class _AdventureDetailsScreenState
         ),
       ),
     );
+  }
+
+  Future<void> _handleDelete(String adventureId) async {
+    try {
+      final repository = ref.read(adventureRepositoryProvider);
+      repository.deleteById(adventureId);
+
+      // Invalidate the adventures list to refresh the home screen
+      ref.invalidate(allAdventuresProvider);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Adventure deleted successfully')),
+        );
+        // Navigate back to home
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error deleting adventure: $e')));
+      }
+    }
   }
 }

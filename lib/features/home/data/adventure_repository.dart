@@ -87,4 +87,8 @@ class AdventureRepository {
     _cache.forEach((adventure) => print(adventure.toString()));
     return updatedAdventure;
   }
+
+  void deleteById(String id) {
+    _cache.removeWhere((a) => a.id == id);
+  }
 }
