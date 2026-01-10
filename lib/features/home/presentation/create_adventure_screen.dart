@@ -219,20 +219,20 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
 
   // Functions start here
   void handleSave() async {
-    //get the notifier of the provider (to use the model class's methods etc)
-    final notifier = ref.read(createAdventureProvider.notifier);
     final formState = ref.read(createAdventureFormProvider);
 
     if (!formState.isValid) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppStrings.createAdventureValidationError),
+          content: Text(AppStrings.adventureFormValidationError),
           backgroundColor: AppColors.primaryColorGlobal,
         ),
       );
       return;
     }
     if (widget.isEditMode) {
+      //get the notifier of the provider (to use the model class's methods etc)
+      final notifier = ref.read(updateAdventureProvider.notifier);
       // UPDATE existing adventure
       await notifier.updateAdventure(
         Adventure(
@@ -249,7 +249,22 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
           maxPeople: formState.maxPeople,
         ),
       );
+      //get the state of the provider
+      final state = ref.read(updateAdventureProvider);
+      if (state.updatedAdventure != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppStrings.adventureUpdatedSuccess)),
+        );
+        context.pop();
+      } else if (state.error != null && mounted) {
+        // Error occurred
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppStrings.errorPrefix}${state.error}')),
+        );
+      }
     } else {
+      //get the notifier of the provider (to use the model class's methods etc)
+      final notifier = ref.read(createAdventureProvider.notifier);
       // CREATE new adventure
       await notifier.createAdventure(
         userId: "temp",
@@ -264,22 +279,20 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
         maxPeople: formState.maxPeople,
         //TODO add parameter: is solo?
       );
+      //get the state of the provider
+      final state = ref.read(createAdventureProvider);
+      if (state.createdAdventure != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppStrings.adventureCreatedSuccess)),
+        );
+        context.pop();
+      } else if (state.error != null && mounted) {
+        // Error occurred
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${AppStrings.errorPrefix}${state.error}')),
+        );
+      }
     }
-
-    //get the state of the provider
-    final state = ref.read(createAdventureProvider);
-    if (state.lastSavedAdventure != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.adventureCreatedSuccess)),
-      );
-      context.pop();
-    } else if (state.error != null && mounted) {
-      // Error occurred
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${AppStrings.errorPrefix}${state.error}')),
-      );
-    }
-
     //NOTE both are read because we dont need to watch any changes.
   }
 

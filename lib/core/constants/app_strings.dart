@@ -29,10 +29,12 @@ class AppStrings {
   static const String createAdventure = 'Create Adventure';
   static const String updateAdventure = 'Update Adventure';
   static const String adventureCreatedSuccess =
-      'Adventure created successfully!';
+      'Adventure Created Successfully!';
+  static const String adventureUpdatedSuccess =
+      'Adventure Updated Successfully!';
   static const String errorPrefix = 'Error: ';
   static const String dateFormat = 'MMM d';
-  static const String createAdventureValidationError =
+  static const String adventureFormValidationError =
       'Please fill all required fields';
 
   //Routes

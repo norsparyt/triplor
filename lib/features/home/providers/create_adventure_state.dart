@@ -5,23 +5,23 @@ import '../domain/models/adventure_model.dart';
 // Form state is managed separately
 class CreateAdventureState {
   final bool isLoading;
-  final Adventure? lastSavedAdventure;
+  final Adventure? createdAdventure;
   final String? error;
 
   CreateAdventureState({
     this.isLoading = false,
-    this.lastSavedAdventure,
+    this.createdAdventure,
     this.error,
   });
 
   CreateAdventureState copyWith({
     bool? isLoading,
-    Adventure? lastSavedAdventure,
+    Adventure? createdAdventure,
     String? error,
   }) {
     return CreateAdventureState(
       isLoading: isLoading ?? this.isLoading,
-      lastSavedAdventure: lastSavedAdventure ?? this.lastSavedAdventure,
+      createdAdventure: createdAdventure ?? this.createdAdventure,
       error: error ?? this.error,
     );
   }

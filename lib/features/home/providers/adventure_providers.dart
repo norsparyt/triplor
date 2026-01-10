@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:triplor/features/home/data/adventure_repository.dart';
 import 'package:triplor/features/home/domain/models/adventure_model.dart';
+import 'package:triplor/features/home/providers/update_adventure_notifier.dart';
+import 'package:triplor/features/home/providers/update_adventure_state.dart';
 
 import 'create_adventure_form_notifier.dart';
 import 'create_adventure_form_state.dart';
@@ -35,6 +37,10 @@ final createAdventureFormProvider =
     NotifierProvider<CreateAdventureFormNotifier, CreateAdventureFormState>(
       CreateAdventureFormNotifier.new,
       isAutoDispose: true,
+    );
+final updateAdventureProvider =
+    NotifierProvider<UpdateAdventureNotifier, UpdateAdventureState>(
+      UpdateAdventureNotifier.new,
     );
 
 final deleteAdventureProvider =

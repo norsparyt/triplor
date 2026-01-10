@@ -22,7 +22,6 @@ class _AdventureDetailsScreenState
     final adventureAsync = ref.watch(
       adventureDetailProvider(widget.adventureId),
     );
-
     return adventureAsync.when(
       data: (adventure) => AdventureDetailsView(
         adventure: adventure,
@@ -53,28 +52,25 @@ class _AdventureDetailsScreenState
     );
   }
 
-  Future<void> _handleDelete(String adventureId) async {
-    try {
-      final repository = ref.read(adventureRepositoryProvider);
-      repository.deleteById(adventureId);
+  void _handleDelete(String adventureId) async {
+    await ref
+        .read(deleteAdventureProvider.notifier)
+        .deleteAdventure(adventureId);
 
-      // Invalidate the adventures list to refresh the home screen
-      ref.invalidate(allAdventuresProvider);
+    // Check the result after deletion completes
+    final deleteState = ref.read(deleteAdventureProvider);
 
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Adventure deleted successfully')),
-        );
-        // Navigate back to home
-        context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error deleting adventure: $e')));
-      }
+    if (!mounted) return;
+
+    if (deleteState.isDeleted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Adventure deleted successfully')),
+      );
+      context.pop();
+    } else if (deleteState.error != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${deleteState.error}')));
     }
   }
 }
