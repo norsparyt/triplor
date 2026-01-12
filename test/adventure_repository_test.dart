@@ -37,7 +37,7 @@ void main() {
 
     // Act
     final created = await repository.createAdventure(newAdventure);
-    final fetched = repository.getAdventureById(created.id);
+    final fetched = await repository.getAdventureById(created.id);
 
     // Assert
     expect(fetched.id, created.id);

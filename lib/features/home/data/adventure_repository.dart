@@ -6,6 +6,7 @@ import '../domain/models/adventure_model.dart';
 class AdventureRepository {
   final List<Adventure> _cache = [];
 
+  //INIT
   AdventureRepository() {
     _cache.addAll([
       Adventure(
@@ -24,6 +25,7 @@ class AdventureRepository {
     ]);
   }
 
+  //READ
   // Simulates network once, returns cached list
   Future<List<Adventure>> fetchAdventures() async {
     //todo redundant since constructor seed
@@ -36,14 +38,17 @@ class AdventureRepository {
     return _cache;
   }
 
-  /// Cached read → SHOULD NOT be async
-  Adventure getAdventureById(String id) {
+  //READ
+  /// TODO Cached read → SHOULD NOT be async?
+  Future<Adventure> getAdventureById(String id) async {
+    await Future.delayed(const Duration(seconds: 1));
     return _cache.firstWhere(
       (a) => a.id == id,
       orElse: () => throw Exception('Adventure not found'),
     );
   }
 
+  // CREATE
   //POST Method
   Future<Adventure> createAdventure(Adventure adventure) async {
     await Future.delayed(Duration(seconds: 1));
@@ -63,8 +68,9 @@ class AdventureRepository {
     return newAdventure;
   }
 
+  // UPDATE
   Future<Adventure> updateAdventure({required Adventure adventure}) async {
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 2));
 
     final index = _cache.indexWhere((a) => a.id == adventure.id);
     if (index == -1) {
@@ -88,7 +94,9 @@ class AdventureRepository {
     return updatedAdventure;
   }
 
-  void deleteById(String id) {
+  //DELETE
+  Future<void> deleteById(String id) async {
+    await Future.delayed(const Duration(seconds: 1));
     _cache.removeWhere((a) => a.id == id);
   }
 }

@@ -53,4 +53,15 @@ class CreateAdventureFormState {
         selectedAdventureStyles.isNotEmpty &&
         description.isNotEmpty;
   }
+
+  bool hasChangesComparedTo(Adventure original) {
+    return location != original.location.city ||
+        description != original.description ||
+        maxPeople != original.maxPeople ||
+        isGroupAdventure != (original.maxPeople > 1) ||
+        startDate != original.dateRange.startDate ||
+        endDate != original.dateRange.endDate ||
+        !selectedAdventureStyles.containsAll(original.styles) ||
+        !original.styles.containsAll(selectedAdventureStyles);
+  }
 }

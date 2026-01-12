@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:triplor/features/home/domain/models/adventure_model.dart';
 import 'package:triplor/features/home/providers/create_adventure_state.dart';
+import 'package:triplor/features/home/providers/update_adventure_state.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
@@ -27,6 +28,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
   final _locationController = TextEditingController();
   final _descriptionController = TextEditingController();
   bool _hasPopulated = false; // ← Guard flag to prevent re-population
+  Adventure? _originalAdventure;
 
   @override
   void initState() {
@@ -41,6 +43,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
   }
 
   void _populateForm(Adventure adventure) {
+    _originalAdventure = adventure;
     // Populate form state
     ref
         .read(createAdventureFormProvider.notifier)
@@ -70,9 +73,15 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
     // final screenWidth = MediaQuery.of(context).size.width;
     // final screenHeight = MediaQuery.of(context).size.height;
     final createAdventureState = ref.watch(createAdventureProvider);
+    final updateAdventureState = ref.watch(updateAdventureProvider);
     final formState = ref.watch(createAdventureFormProvider);
+    final bool canUpdate =
+        widget.isEditMode &&
+        _originalAdventure != null &&
+        formState.hasChangesComparedTo(_originalAdventure!) &&
+        formState.isValid;
 
-    // ✅ WATCH the adventure data (reactive)
+    // WATCH the adventure data (reactive)
     if (widget.isEditMode) {
       final adventureAsync = ref.watch(
         adventureDetailProvider(widget.adventureId!),
@@ -209,7 +218,12 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
             SizedBox(height: 24),
 
             // Save button
-            _buildSaveButton(formState, createAdventureState),
+            _buildSaveButton(
+              formState,
+              createAdventureState,
+              updateAdventureState,
+              canUpdate,
+            ),
             SizedBox(height: 40),
           ],
         ),
@@ -715,9 +729,12 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
   Widget _buildSaveButton(
     CreateAdventureFormState formState,
     CreateAdventureState createAdventureState,
+    UpdateAdventureState updateAdventureState,
+    bool canUpdate,
   ) {
-    final isButtonEnabled =
-        formState.isValid && !createAdventureState.isLoading;
+    final isButtonEnabled = widget.isEditMode
+        ? canUpdate && !updateAdventureState.isLoading
+        : formState.isValid && !createAdventureState.isLoading;
     return SizedBox(
       width: double.infinity,
       height: 56,
@@ -731,7 +748,8 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
           ),
           elevation: 0,
         ),
-        child: (createAdventureState.isLoading)
+        child:
+            (createAdventureState.isLoading || updateAdventureState.isLoading)
             ? CircularProgressIndicator(color: Colors.white)
             : Text(
                 widget.isEditMode

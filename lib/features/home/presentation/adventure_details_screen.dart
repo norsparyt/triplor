@@ -25,7 +25,7 @@ class _AdventureDetailsScreenState
     return adventureAsync.when(
       data: (adventure) => AdventureDetailsView(
         adventure: adventure,
-        onDeletePressed: () => _handleDelete(adventure.id),
+        onDeletePressed: () => _showDeleteDialog(adventure.id),
       ),
       loading: () => Scaffold(
         body: Center(
@@ -52,7 +52,62 @@ class _AdventureDetailsScreenState
     );
   }
 
-  void _handleDelete(String adventureId) async {
+  Future<void> _showDeleteDialog(String adventureId) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        // Use different name to avoid confusion
+        return Consumer(
+          builder: (context, ref, child) {
+            final deleteState = ref.watch(deleteAdventureProvider);
+            return AlertDialog(
+              title: const Text('Delete Adventure'),
+              content: deleteState.isLoading
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: Color(0xFF2196F3)),
+                        SizedBox(height: 16),
+                        Text('Deleting adventure...'),
+                      ],
+                    )
+                  : const SingleChildScrollView(
+                      child: ListBody(
+                        children: <Widget>[
+                          Text(
+                            'Are you sure you want to remove this adventure?',
+                          ),
+                        ],
+                      ),
+                    ),
+              actions: deleteState.isLoading
+                  ? [] // Hide buttons during loading
+                  : <Widget>[
+                      TextButton(
+                        child: const Text('Cancel'),
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                      TextButton(
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        onPressed: () =>
+                            _handleDelete(dialogContext, adventureId),
+                      ),
+                    ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handleDelete(
+    BuildContext dialogContext,
+    String adventureId,
+  ) async {
     await ref
         .read(deleteAdventureProvider.notifier)
         .deleteAdventure(adventureId);
@@ -63,11 +118,16 @@ class _AdventureDetailsScreenState
     if (!mounted) return;
 
     if (deleteState.isDeleted) {
+      Navigator.of(dialogContext).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Adventure deleted successfully')),
       );
-      context.pop();
+      // Reset the delete state for future operations
+      ref.read(deleteAdventureProvider.notifier).reset();
+      // Pop the details screen
+      context.go(AppStrings.homeRoute);
     } else if (deleteState.error != null) {
+      Navigator.of(dialogContext).pop();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: ${deleteState.error}')));

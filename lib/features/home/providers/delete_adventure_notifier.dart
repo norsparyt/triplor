@@ -14,7 +14,7 @@ class DeleteAdventureNotifier extends Notifier<DeleteAdventureState> {
 
     try {
       final repository = ref.read(adventureRepositoryProvider);
-      repository.deleteById(adventureId);
+      await repository.deleteById(adventureId);
 
       // Invalidate the list to trigger refresh
       ref.invalidate(allAdventuresProvider);

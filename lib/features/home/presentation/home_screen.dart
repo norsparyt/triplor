@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:triplor/features/home/providers/adventure_providers.dart';
-
 import '../../../app/theme/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
-import '../domain/models/adventure_model.dart';
+import '../../../shared/models/date_range_model.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -28,7 +26,9 @@ class HomeScreen extends ConsumerWidget {
                   AdventureCard(
                     id: adventure[index].id,
                     title: adventure[index].location.displayName,
-                    date: _formatDateRange(adventure[index]),
+                    date: DateRangeModel.formatDateRange(
+                      adventure[index].dateRange,
+                    ),
                     type: adventure[index].styles.first.label,
                     travelMode: adventure[index].maxPeople == 1
                         ? 'Solo'
@@ -62,23 +62,6 @@ class HomeScreen extends ConsumerWidget {
         elevation: 4,
       ),
     );
-  }
-
-  String _formatDateRange(Adventure adventure) {
-    final formatter = DateFormat('MMM d, yyyy');
-    final start = formatter.format(adventure.dateRange.startDate);
-    final end = formatter.format(adventure.dateRange.endDate);
-
-    // If same month and year, show shorter format
-    if (adventure.dateRange.startDate.month ==
-            adventure.dateRange.endDate.month &&
-        adventure.dateRange.startDate.year ==
-            adventure.dateRange.endDate.year) {
-      final monthFormatter = DateFormat('MMM d');
-      return '${monthFormatter.format(adventure.dateRange.startDate)} - ${adventure.dateRange.endDate.day}, ${adventure.dateRange.endDate.year}';
-    }
-
-    return '$start - $end';
   }
 }
 

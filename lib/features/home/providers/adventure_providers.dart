@@ -12,6 +12,7 @@ import 'delete_adventure_notifier.dart';
 import 'delete_adventure_state.dart';
 
 final adventureRepositoryProvider = Provider<AdventureRepository>((ref) {
+  // App-lifetime in-memory repository
   return AdventureRepository();
 });
 
