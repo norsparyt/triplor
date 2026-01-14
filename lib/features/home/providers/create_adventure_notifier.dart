@@ -34,7 +34,9 @@ class CreateAdventureNotifier extends Notifier<CreateAdventureState> {
         description: description,
         maxPeople: maxPeople,
       );
-      final createdAdventure = await repository.createAdventure(newAdventure);
+      final createdAdventure = await repository.createAdventure(
+        adventure: newAdventure,
+      );
       //fetched the created adventure
       state = state.copyWith(
         isLoading: false,

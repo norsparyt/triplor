@@ -9,19 +9,19 @@ class AdventureRepository {
   //INIT
   AdventureRepository() {
     _cache.addAll([
-      Adventure(
-        id: "1",
-        userId: "2",
-        location: LocationModel(city: "Goa", country: "India"),
-        dateRange: DateRangeModel(
-          startDate: DateTime.now(),
-          endDate: DateTime.now().add(const Duration(days: 7)),
-        ),
-        styles: {AdventureStyle.Backpacking, AdventureStyle.Culture},
-        description:
-            "Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo!",
-        maxPeople: 5,
-      ),
+      // Adventure(
+      //   id: "1",
+      //   userId: "2",
+      //   location: LocationModel(city: "Goa", country: "India"),
+      //   dateRange: DateRangeModel(
+      //     startDate: DateTime.now(),
+      //     endDate: DateTime.now().add(const Duration(days: 7)),
+      //   ),
+      //   styles: {AdventureStyle.Backpacking, AdventureStyle.Culture},
+      //   description:
+      //       "Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo!",
+      //   maxPeople: 5,
+      // ),
     ]);
   }
 
@@ -50,7 +50,7 @@ class AdventureRepository {
 
   // CREATE
   //POST Method
-  Future<Adventure> createAdventure(Adventure adventure) async {
+  Future<Adventure> createAdventure({required Adventure adventure}) async {
     await Future.delayed(Duration(seconds: 1));
 
     // For now, return the adventure with a generated ID
