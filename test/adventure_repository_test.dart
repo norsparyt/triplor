@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triplor/features/home/data/adventure_repository.dart';
+import 'package:triplor/features/home/data/adventure_repository_exceptions.dart';
 import 'package:triplor/features/home/domain/models/adventure_model.dart';
 import 'package:triplor/shared/models/date_range_model.dart';
 import 'package:triplor/shared/models/location_model.dart';
@@ -43,7 +44,10 @@ void main() {
   });
 
   test('getAdventureById throws when adventure not found', () {
-    expect(() => repository.getAdventureById('invalid-id'), throwsException);
+    expect(
+      () => repository.getAdventureById('invalid-id'),
+      throwsA(isA<AdventureNotFoundException>()),
+    );
   });
 
   test('updateAdventure updates existing adventure in cache', () async {
@@ -99,7 +103,7 @@ void main() {
 
     expect(
       () => repository.updateAdventure(adventure: adventure),
-      throwsException,
+      throwsA(isA<AdventureNotFoundException>()),
     );
   });
 }

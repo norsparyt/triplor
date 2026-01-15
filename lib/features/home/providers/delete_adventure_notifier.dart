@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../data/adventure_repository_exceptions.dart';
 import 'adventure_providers.dart';
 import 'delete_adventure_state.dart';
 
@@ -20,8 +20,13 @@ class DeleteAdventureNotifier extends Notifier<DeleteAdventureState> {
       ref.invalidate(allAdventuresProvider);
 
       state = state.copyWith(isLoading: false, isDeleted: true);
-    } catch (error) {
-      state = state.copyWith(isLoading: false, error: error.toString());
+    } on AdventureNotFoundException {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Adventure no longer exists',
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: 'Something went wrong');
     }
   }
 
