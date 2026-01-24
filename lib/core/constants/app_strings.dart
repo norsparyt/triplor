@@ -36,8 +36,7 @@ class AppStrings {
   static const String dateFormat = 'MMM d';
   static const String adventureFormValidationError =
       'Please fill all required fields';
-  static const String adventureNotFoundError =
-      'Oops. Looks like the Adventure does not exist.';
+
   //Routes
   static const String homeRoute = '/home';
   static const String adventureDetails = 'adventureDetails';

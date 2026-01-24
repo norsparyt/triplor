@@ -248,34 +248,21 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
       //get the notifier of the provider (to use the model class's methods etc)
       final notifier = ref.read(updateAdventureProvider.notifier);
       // UPDATE existing adventure
-      try {
-        await notifier.updateAdventure(
-          Adventure(
-            id: widget.adventureId!,
-            //todo change this to user id
-            userId: 'temp',
-            location: LocationModel(
-              city: formState.location,
-              country: "Default",
-            ),
-            dateRange: DateRangeModel(
-              startDate: formState.startDate!,
-              endDate: formState.endDate!,
-            ),
-            styles: formState.selectedAdventureStyles,
-            description: formState.description,
-            maxPeople: formState.maxPeople,
+      await notifier.updateAdventure(
+        Adventure(
+          id: widget.adventureId!,
+          //todo change this to user id
+          userId: 'temp',
+          location: LocationModel(city: formState.location, country: "Default"),
+          dateRange: DateRangeModel(
+            startDate: formState.startDate!,
+            endDate: formState.endDate!,
           ),
-        );
-      } catch (e) {
-        // CHANGE: immediate UI feedback for unexpected failures
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${AppStrings.errorPrefix}${e.toString()}')),
-          );
-        }
-        return;
-      }
+          styles: formState.selectedAdventureStyles,
+          description: formState.description,
+          maxPeople: formState.maxPeople,
+        ),
+      );
       //get the state of the provider
       final state = ref.read(updateAdventureProvider);
       if (state.updatedAdventure != null && mounted) {
@@ -284,7 +271,7 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
         );
         context.pop();
       } else if (state.error != null && mounted) {
-        //Provider level Error managed
+        // Error occurred
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${AppStrings.errorPrefix}${state.error}')),
         );
@@ -293,39 +280,28 @@ class _CreateAdventureScreen extends ConsumerState<CreateAdventureScreen> {
       //get the notifier of the provider (to use the model class's methods etc)
       final notifier = ref.read(createAdventureProvider.notifier);
       // CREATE new adventure
-      try {
-        await notifier.createAdventure(
-          userId: "temp",
-          // TODO: Get from auth provider in real app
-          location: LocationModel(city: formState.location, country: "Default"),
-          dateRange: DateRangeModel(
-            startDate: formState.startDate!,
-            endDate: formState.endDate!,
-          ),
-          style: formState.selectedAdventureStyles,
-          description: formState.description,
-          maxPeople: formState.maxPeople,
-          //TODO add parameter: is solo?
-        );
-      } catch (e) {
-        // CHANGE: immediate UI feedback for unexpected failures
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${AppStrings.errorPrefix}${e.toString()}')),
-          );
-        }
-        return;
-      }
+      await notifier.createAdventure(
+        userId: "temp",
+        // TODO: Get from auth provider in real app
+        location: LocationModel(city: formState.location, country: "Default"),
+        dateRange: DateRangeModel(
+          startDate: formState.startDate!,
+          endDate: formState.endDate!,
+        ),
+        style: formState.selectedAdventureStyles,
+        description: formState.description,
+        maxPeople: formState.maxPeople,
+        //TODO add parameter: is solo?
+      );
       //get the state of the provider
       final state = ref.read(createAdventureProvider);
-
       if (state.createdAdventure != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppStrings.adventureCreatedSuccess)),
         );
         context.pop();
       } else if (state.error != null && mounted) {
-        //Provider level Error managed
+        // Error occurred
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${AppStrings.errorPrefix}${state.error}')),
         );

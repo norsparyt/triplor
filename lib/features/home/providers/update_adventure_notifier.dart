@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:triplor/features/home/providers/update_adventure_state.dart';
 
-import '../data/adventure_repository_exceptions.dart';
 import '../domain/models/adventure_model.dart';
 import 'adventure_providers.dart';
 
@@ -26,16 +25,8 @@ class UpdateAdventureNotifier extends Notifier<UpdateAdventureState> {
       );
       ref.invalidate(allAdventuresProvider);
       ref.invalidate(adventureDetailProvider(adventure.id));
-    } on AdventureNotFoundException {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Adventure no longer exists',
-      );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Something went wrong');
+    } catch (error) {
+      state = state.copyWith(isLoading: false, error: error.toString());
     }
-    // catch (error) {
-    //   state = state.copyWith(isLoading: false, error: error.toString());
-    // }
   }
 }

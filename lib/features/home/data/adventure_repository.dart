@@ -1,7 +1,7 @@
-import '../../../shared/models/date_range_model.dart';
-import '../../../shared/models/location_model.dart';
+import 'package:triplor/shared/models/date_range_model.dart';
+import 'package:triplor/shared/models/location_model.dart';
+
 import '../domain/models/adventure_model.dart';
-import 'adventure_repository_exceptions.dart';
 
 class AdventureRepository {
   final List<Adventure> _cache = [];
@@ -9,19 +9,19 @@ class AdventureRepository {
   //INIT
   AdventureRepository() {
     _cache.addAll([
-      Adventure(
-        id: "1",
-        userId: "2",
-        location: LocationModel(city: "Goa", country: "India"),
-        dateRange: DateRangeModel(
-          startDate: DateTime.now(),
-          endDate: DateTime.now().add(const Duration(days: 7)),
-        ),
-        styles: {AdventureStyle.Backpacking, AdventureStyle.Culture},
-        description:
-            "Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo!",
-        maxPeople: 5,
-      ),
+      // Adventure(
+      //   id: "1",
+      //   userId: "2",
+      //   location: LocationModel(city: "Goa", country: "India"),
+      //   dateRange: DateRangeModel(
+      //     startDate: DateTime.now(),
+      //     endDate: DateTime.now().add(const Duration(days: 7)),
+      //   ),
+      //   styles: {AdventureStyle.Backpacking, AdventureStyle.Culture},
+      //   description:
+      //       "Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo! Hi lets goo! Hi lets goo!Hi lets goo!",
+      //   maxPeople: 5,
+      // ),
     ]);
   }
 
@@ -29,9 +29,9 @@ class AdventureRepository {
   // Simulates network once, returns cached list
   Future<List<Adventure>> fetchAdventures() async {
     //todo redundant since constructor seed
-    // if (_cache.isNotEmpty) {
-    //   return _cache;
-    // }
+    if (_cache.isNotEmpty) {
+      return _cache;
+    }
 
     await Future.delayed(const Duration(milliseconds: 500));
     _cache.forEach((adventure) => print(adventure.toString()));
@@ -74,7 +74,7 @@ class AdventureRepository {
 
     final index = _cache.indexWhere((a) => a.id == adventure.id);
     if (index == -1) {
-      throw AdventureNotFoundException(adventure.id);
+      throw Exception('Adventure not found');
     }
 
     final existing = _cache[index];

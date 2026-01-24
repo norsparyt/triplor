@@ -39,7 +39,7 @@ class _AdventureDetailsScreenState
             children: [
               Icon(Icons.error_outline, size: 60, color: Colors.red),
               SizedBox(height: 16),
-              Text(err.toString()),
+              Text('Error loading adventure'),
               SizedBox(height: 8),
               TextButton(
                 onPressed: () => context.go(AppStrings.homeRoute),
