@@ -1,50 +1,62 @@
-# Triplor 🚀
-A travel matching and planning app built with Flutter, focused on connecting solo travelers and groups through shared adventures.
+# Triplor
 
-## Overview
-Triplor helps users discover, create, and explore travel adventures, and eventually match with other travelers based on trip preferences such as location, dates, and travel type.
+Triplor is a travel-matching app. Travellers post an adventure (destination, dates, style, group size), others discover it and ask to join, and accepted travellers plan the trip together in chat.
 
-This project is being developed as a **scalable MVP**, with clean architecture and state management best practices, suitable for real-world extension.
+The project is a Flutter client plus a set of Spring Boot services. The backend is being built in phases; the table below shows what exists today.
 
-## Tech Stack
-- **Flutter**
-- **Dart**
-- **Riverpod** (state management)
-- **GoRouter** (navigation)
-- **Material UI**
+## Status
 
-## Current Features (MVP)
-- Bottom navigation with shell routing
-- Adventure listing on Home screen
-- Create Adventure flow (local/in-memory)
-- Central Adventure Repository
-- Adventure detail screen (ID-based navigation)
-- Clean separation of UI, state, and data layers
+| Part | State |
+|---|---|
+| Flutter client (`mobile/`) | Adventure create, edit, list and delete against in-memory data |
+| Backend skeleton | Maven monorepo with three empty services that build and start |
+| Identity, adventure and chat services | Not started (Phase 1) |
+| Kafka, Redis, notifications, gateway | Not started (Phase 2) |
+| Flutter integration, admin console, GraphQL, trip planner | Not started (Phase 3) |
+| CI/CD and AWS deployment | CI only; deployment not started (Phase 4) |
 
-## Architecture
-- Feature-first folder structure
-- Repository pattern for data access
-- Riverpod providers for state management
-- UI split into Screens and Pure View widgets
+## Documentation
 
-## Project Status
-🚧 **In active development**
+- [Architecture and roadmap](docs/ARCHITECTURE.md): the target system, why each technology is there, and the build order.
+- [Phase 1 plan](docs/plans/phase-1.md) and [Phase 2 plan](docs/plans/phase-2.md): milestone-by-milestone implementation plans.
 
-Planned next steps:
-- Unit tests for repositories and notifiers
-- Caching & async refactors
-- Firebase integration (later phase)
-- Matching logic between travelers
-- Chat and requests flow
+## Repository layout
 
-## Why this project?
-This app is built as a **portfolio-quality project** to demonstrate:
-- Real app architecture decisions
-- Scalable Flutter + Riverpod patterns
-- Thoughtful MVP scoping
-- Clean navigation and state handling
+```
+mobile/          Flutter client
+services/        identity, adventure, chat (Spring Boot)
+libs/common/     cross-cutting code shared by the services
+libs/test-support/  shared test helpers
+infra/           Docker image for Postgres, Compose file
+docs/            architecture and plans
+```
 
-## Getting Started
+## Prerequisites
+
+- JDK 21
+- Docker
+- Flutter SDK, for `mobile/`
+
+No global Maven install is needed; the wrapper (`./mvnw`) downloads it.
+
+## Running
+
+Build and test the backend:
+
 ```bash
-flutter pub get
-flutter run
+./mvnw verify
+```
+
+Start the local databases (PostgreSQL with PostGIS, and MongoDB). Copy `.env.example` to `.env` and set the passwords first.
+
+```bash
+make up
+```
+
+Run the Flutter client:
+
+```bash
+cd mobile && flutter pub get && flutter run
+```
+
+`make help` lists the other targets.

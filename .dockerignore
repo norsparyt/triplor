@@ -1,0 +1,9 @@
+.git
+.github
+mobile
+docs
+infra
+**/target
+.env
+.local
+.DS_Store
