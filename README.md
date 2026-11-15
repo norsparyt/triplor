@@ -9,7 +9,7 @@ The project is a Flutter client plus a set of Spring Boot services. The backend 
 | Part | State |
 |---|---|
 | Flutter client (`mobile/`) | Adventure create, edit, list and delete against in-memory data |
-| Identity service | Register, log in, refresh and log out; RS256 access tokens verifiable through a JWKS endpoint |
+| Identity service | Accounts, RS256 access tokens verifiable through a JWKS endpoint, rotating refresh tokens, profiles, and admin-reviewed verification |
 | Adventure and chat services | Empty skeletons (Phase 1, in progress) |
 | Kafka, Redis, notifications, gateway | Not started (Phase 2) |
 | Flutter integration, admin console, GraphQL, trip planner | Not started (Phase 3) |

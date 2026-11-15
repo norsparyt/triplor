@@ -36,3 +36,10 @@ triplor:
     private-key-path: ${TRIPLOR_JWT_PRIVATE_KEY_PATH:../../.local/jwt-private.pem}
     access-token-ttl: 15m
     refresh-token-ttl: 30d
+  bootstrap:
+    # The first admin. Created at start-up only when both values are set (see .env.example).
+    admin-email: ${TRIPLOR_ADMIN_EMAIL:}
+    admin-password: ${TRIPLOR_ADMIN_PASSWORD:}
+    # Used only by the `seed` profile, which creates verified load-test users.
+    seed-user-count: 200
+    seed-password: ${TRIPLOR_SEED_PASSWORD:}

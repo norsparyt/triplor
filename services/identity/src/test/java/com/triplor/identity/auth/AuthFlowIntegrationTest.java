@@ -200,9 +200,8 @@ class AuthFlowIntegrationTest extends IdentityIntegrationTest {
         String body = register(uniqueEmail(), "Asha").andReturn().getResponse().getContentAsString();
         String accessToken = JsonPath.read(body, "$.accessToken");
 
-        // The token is accepted, so the request gets past security. The endpoint itself arrives in M2.
         mvc.perform(get("/users/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk());
     }
 
     private ResultActions register(String email, String displayName) throws Exception {

@@ -191,6 +191,19 @@ Request bodies: register takes `email`, `password` (10 characters minimum) and `
 
 **Goal:** profile data other services can read, and a way for a user to become verified.
 
+**Status:** built and passing (26 new tests; 77 across the build), and smoke-tested over HTTP against the Compose database.
+
+Decisions made while building it:
+
+- Users must be at least 18. A date of birth that makes the user younger is rejected.
+- In a `PATCH`, an absent field is unchanged. An empty string clears `bio` and `homeCity`.
+- Suspended users are hidden from the public profile endpoints (404, and left out of batch results).
+- The public card also carries `homeCity`.
+- The review queue returns one page, oldest first (default 50, maximum 100). Cursor pagination can wait for the admin console.
+- A request is reviewed once. A second approve or reject returns 409 `VERIFICATION_ALREADY_REVIEWED`.
+- The first admin comes from `TRIPLOR_ADMIN_EMAIL` and `TRIPLOR_ADMIN_PASSWORD`. Bootstrap never changes an existing account.
+- Load-test users are `loadtest-N@triplor.test`, created by the `seed` profile with the password in `TRIPLOR_SEED_PASSWORD`.
+
 ### Schema (`V2__profiles.sql`, created in M1, and `V3__verification_requests.sql`)
 
 ```sql
@@ -234,15 +247,15 @@ CREATE UNIQUE INDEX verification_one_pending_idx
 | `POST /admin/verifications/{id}/approve` | admin | Sets `verified_at` |
 | `POST /admin/verifications/{id}/reject` | admin | Takes a `reason` |
 
-- [ ] Role checks with `@PreAuthorize("hasRole('ADMIN')")`.
-- [ ] Bootstrap admin: created at startup only when the admin email and password environment variables are set.
-- [ ] A `seed` profile that creates a batch of verified load-test users with a known password. It must never be active outside local runs.
+- [x] Role checks with `@PreAuthorize("hasRole('ADMIN')")`.
+- [x] Bootstrap admin: created at startup only when the admin email and password environment variables are set.
+- [x] A `seed` profile that creates a batch of verified load-test users with a known password. It must never be active outside local runs.
 
 The `verified` claim is copied into the access token, so other services can enforce "verified users only" without calling identity. The claim can be up to 15 minutes stale; Phase 2 closes that gap with events.
 
 ### Tests
 
-- [ ] Integration: approve sets `verified_at`, and the next token carries `verified: true`; a second pending request returns 409; a non-admin gets 403 on admin routes; the batch endpoint returns only public fields.
+- [x] Integration: approve sets `verified_at`, and the next token carries `verified: true`; a second pending request returns 409; a non-admin gets 403 on admin routes; the batch endpoint returns only public fields.
 
 **Done when:** an admin can verify a user through the API and the user's next token shows it.
 
@@ -665,6 +678,9 @@ Laptop numbers are not production numbers. What matters is the comparison with P
 | `FORBIDDEN` | 403 | Not the organizer, not a member, or not an admin |
 | `NOT_FOUND` | 404 | Unknown resource |
 | `EMAIL_TAKEN` | 409 | Registering an existing email |
+| `VERIFICATION_PENDING` | 409 | A verification request is already pending |
+| `ALREADY_VERIFIED` | 409 | A verified user asks to be verified again |
+| `VERIFICATION_ALREADY_REVIEWED` | 409 | An admin acts on a request that was already approved or rejected |
 | `ADVENTURE_FULL` | 409 | No seats remain |
 | `ADVENTURE_NOT_OPEN` | 409 | Cancelled, completed or already started |
 | `REQUEST_ALREADY_EXISTS` | 409 | A pending or accepted request already exists |
