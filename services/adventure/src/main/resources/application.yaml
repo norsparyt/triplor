@@ -1,6 +1,12 @@
 spring:
   application:
     name: adventure
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Tokens are verified locally with identity's public key, fetched lazily from here.
+          jwk-set-uri: ${IDENTITY_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
 
 server:
   port: 8082

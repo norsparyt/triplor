@@ -4,11 +4,11 @@ Triplor is a travel-matching app. Travellers post an adventure (destination, dat
 
 This document records where the project stands, the target system, and the order it will be built in.
 
-**Status (2026-11-10):** proposal. Only the Flutter client described under "Starting point" exists. Update the table as work lands.
+**Status (2026-11-15):** Phase 1 is under way. The Flutter client, the monorepo skeleton and the identity service's accounts and tokens exist; everything else below is still a plan.
 
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | Core backend: identity, adventure and chat services ([detailed plan](plans/phase-1.md)) | Not started |
+| 1 | Core backend: identity, adventure and chat services ([detailed plan](plans/phase-1.md)) | In progress: M0 and M1 of 9 milestones done |
 | 2 | Kafka, Redis, notification service, gateway ([detailed plan](plans/phase-2.md)) | Not started |
 | 3 | Flutter integration, React admin, GraphQL, RAG planner | Not started |
 | 4 | CI/CD and AWS deployment | Not started |
