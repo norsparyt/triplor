@@ -61,7 +61,7 @@ Each milestone ends with a "Be able to explain" list. Treat it as part of the de
 
 **Goal:** an empty monorepo that builds locally and in CI.
 
-- [ ] Install an arm64 JDK 21 and a Docker runtime. Confirm with `java -version` and `docker run hello-world`. (Until then the skeleton builds on the installed JDK 23, compiling for Java 21.)
+- [x] Install an arm64 JDK 21 and a Docker runtime. Confirm with `java -version` and `docker run hello-world`. (Until then the skeleton builds on the installed JDK 23, compiling for Java 21.)
 - [x] Put the project under git: work in the clone of the GitHub repo.
 - [x] Move the Flutter app into `mobile/` with `git mv`, including its `README.md` and `.gitignore`.
 - [x] Run `flutter test` from `mobile/` to confirm nothing broke (7 tests pass).
@@ -73,7 +73,7 @@ Each milestone ends with a "Be able to explain" list. Treat it as part of the de
 - [x] `Makefile` targets: `db-image`, `up`, `down`, `reset`, `test`, `keys`.
 - [x] `.github/workflows/ci.yml`: build the Postgres image, run `./mvnw -B verify`, then `flutter analyze` and `flutter test` in `mobile/`.
 - [x] Rewrite the root `README.md`: what the system is, how to run it, links to the docs.
-- [ ] First run of `make up` and of the CI workflow, to prove the Docker image, the init script and the pipeline.
+- [x] First run of `make up` and of the CI workflow, to prove the Docker image, the init script and the pipeline.
 
 ```dockerfile
 # infra/docker/postgres/Dockerfile (pgvector is added in Phase 3)
@@ -94,19 +94,29 @@ RUN apt-get update \
 
 **Goal:** register, log in, refresh and log out, with tokens other services can verify without calling identity.
 
+**Status:** built and passing (62 tests across `common` and `identity`), and smoke-tested over HTTP against the Compose database.
+
+Differences from the original plan:
+
+- The `profiles` table is created in this milestone (`V2__profiles.sql`), because registration stores the display name. The verification table moves to `V3` in M2.
+- Token verification in adventure and chat uses Spring Boot's own `spring.security.oauth2.resourceserver.jwt.*` properties; the shared library adds only the filter chain, role mapping and error rendering.
+- The MongoDB container definition is added in M6, when chat first needs it.
+- The Compose database is published on host port 5433, because a native PostgreSQL on 5432 would otherwise answer on `localhost`.
+- The signing-key path is bound as a string. A relative path cannot be bound to `java.nio.file.Path` inside a web application.
+
 ### `libs/common`
 
 Keep it thin: cross-cutting code only, never domain types.
 
-- [ ] Error handling: `ApiException(code, status, detail)` and a `@RestControllerAdvice` that turns it, bean-validation failures and malformed requests into problem JSON (`type`, `title`, `status`, `detail`, `code`, `errors[]`).
-- [ ] Resource-server security configuration: JWKS URI, issuer and audience validation, a converter from the `roles` claim to authorities, stateless sessions, CSRF off.
-- [ ] `CurrentUser` (id, roles, verified) resolved from the JWT as a controller argument.
-- [ ] A `Clock` bean. Inject time everywhere; tests use a fixed clock.
+- [x] Error handling: `ApiException(code, status, detail)` and a `@RestControllerAdvice` that turns it, bean-validation failures and malformed requests into problem JSON (`type`, `title`, `status`, `detail`, `code`, `errors[]`).
+- [x] Resource-server security configuration: JWKS URI, issuer and audience validation, a converter from the `roles` claim to authorities, stateless sessions, CSRF off.
+- [x] `CurrentUser` (id, roles, verified) resolved from the JWT as a controller argument.
+- [x] A `Clock` bean. Inject time everywhere; tests use a fixed clock.
 
 ### `libs/test-support`
 
-- [ ] A test RSA key, a decoder configured with its public half, and a factory that mints tokens for any user, role and verified flag. Other services use it so their tests never need identity running.
-- [ ] Shared Testcontainers definitions (Postgres from the custom image, declared as a compatible substitute for `postgres`; MongoDB).
+- [x] A test RSA key, a decoder configured with its public half, and a factory that mints tokens for any user, role and verified flag. Other services use it so their tests never need identity running.
+- [x] Shared Testcontainers definitions (Postgres from the custom image, declared as a compatible substitute for `postgres`; MongoDB).
 
 ### Identity schema (Flyway `V1__accounts.sql`)
 
@@ -167,9 +177,9 @@ Request bodies: register takes `email`, `password` (10 characters minimum) and `
 
 ### Tests
 
-- [ ] Unit: token claims and expiry with a fixed clock; each branch of refresh rotation.
-- [ ] Web slice: validation failures produce problem JSON with field errors.
-- [ ] Integration (Testcontainers Postgres): register then log in; duplicate email returns 409; a rotated refresh token works once; reusing the old one revokes the family, so the new one fails too; every issued token's key ID appears in the JWKS document.
+- [x] Unit: token claims and expiry with a fixed clock; each branch of refresh rotation.
+- [x] Web slice: validation failures produce problem JSON with field errors.
+- [x] Integration (Testcontainers Postgres): register then log in; duplicate email returns 409; a rotated refresh token works once; reusing the old one revokes the family, so the new one fails too; every issued token's key ID appears in the JWKS document.
 
 **Done when:** the integration tests pass and a token from identity is accepted by a throwaway protected endpoint using only the JWKS URL.
 
@@ -181,7 +191,7 @@ Request bodies: register takes `email`, `password` (10 characters minimum) and `
 
 **Goal:** profile data other services can read, and a way for a user to become verified.
 
-### Schema (`V2__profiles.sql`)
+### Schema (`V2__profiles.sql`, created in M1, and `V3__verification_requests.sql`)
 
 ```sql
 CREATE TABLE profiles (

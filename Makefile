@@ -17,7 +17,7 @@ down: ## Stop the local stack, keeping its data
 reset: ## Stop the local stack and delete its data
 	$(COMPOSE) down -v
 
-test: ## Build everything and run all tests
+test: db-image ## Build everything and run all tests (needs Docker)
 	./mvnw -B verify
 
 keys: ## Generate the development JWT signing key into .local/ (git-ignored)

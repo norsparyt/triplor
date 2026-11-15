@@ -1,0 +1,2 @@
+com.triplor.common.web.TriplorWebAutoConfiguration
+com.triplor.common.security.TriplorSecurityAutoConfiguration

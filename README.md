@@ -9,8 +9,8 @@ The project is a Flutter client plus a set of Spring Boot services. The backend 
 | Part | State |
 |---|---|
 | Flutter client (`mobile/`) | Adventure create, edit, list and delete against in-memory data |
-| Backend skeleton | Maven monorepo with three empty services that build and start |
-| Identity, adventure and chat services | Not started (Phase 1) |
+| Identity service | Register, log in, refresh and log out; RS256 access tokens verifiable through a JWKS endpoint |
+| Adventure and chat services | Empty skeletons (Phase 1, in progress) |
 | Kafka, Redis, notifications, gateway | Not started (Phase 2) |
 | Flutter integration, admin console, GraphQL, trip planner | Not started (Phase 3) |
 | CI/CD and AWS deployment | CI only; deployment not started (Phase 4) |
@@ -41,16 +41,28 @@ No global Maven install is needed; the wrapper (`./mvnw`) downloads it.
 
 ## Running
 
-Build and test the backend:
-
-```bash
-./mvnw verify
-```
-
 Start the local databases (PostgreSQL with PostGIS, and MongoDB). Copy `.env.example` to `.env` and set the passwords first.
 
 ```bash
 make up
+```
+
+PostgreSQL is published on host port 5433, so it cannot collide with a PostgreSQL already installed on the machine.
+
+Run the identity service. It needs a signing key, which `make keys` generates once into the git-ignored `.local/` folder.
+
+```bash
+make keys
+```
+
+```bash
+./mvnw spring-boot:run -pl services/identity
+```
+
+The tests need the Postgres image and a running Docker daemon:
+
+```bash
+make test
 ```
 
 Run the Flutter client:

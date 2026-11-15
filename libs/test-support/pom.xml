@@ -14,5 +14,27 @@
   <name>test-support</name>
   <description>Test helpers shared by every service: token factory and container definitions.</description>
 
-  <!-- A plain library jar: no spring-boot-maven-plugin here, so it is not repackaged as an executable. -->
+  <!-- Services depend on this module with test scope, so its own dependencies are compile scope here. -->
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+    </dependency>
+  </dependencies>
 </project>

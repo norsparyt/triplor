@@ -13,7 +13,9 @@ services:
       IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?set IDENTITY_DB_PASSWORD in .env}
       ADVENTURE_DB_PASSWORD: ${ADVENTURE_DB_PASSWORD:?set ADVENTURE_DB_PASSWORD in .env}
     ports:
-      - "5432:5432"
+      # Host port 5433, not 5432: many machines already run a native PostgreSQL on 5432,
+      # and it would silently win over this container on localhost.
+      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
