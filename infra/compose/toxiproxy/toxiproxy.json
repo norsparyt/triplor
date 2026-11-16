@@ -1,0 +1,8 @@
+[
+  {
+    "name": "chat",
+    "listen": "0.0.0.0:18083",
+    "upstream": "chat:8083",
+    "enabled": true
+  }
+]

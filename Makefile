@@ -1,6 +1,8 @@
 COMPOSE := docker compose --env-file .env -f infra/compose/compose.yaml
 
-.PHONY: help db-image up up-all down reset test keys places sample-places seed-adventures index-study smoke
+COMPOSE_ALL := $(COMPOSE) --profile app --profile chaos
+
+.PHONY: help db-image up up-all up-load up-chaos down reset load-search load-accept load-cleanup test keys places sample-places seed-adventures index-study smoke
 
 help: ## List the available targets
 	@grep -E "^[a-z-]+:.*##" $(MAKEFILE_LIST) | awk -F ":.*## " '{printf "  %-16s %s\n", $$1, $$2}'
@@ -14,11 +16,17 @@ up: db-image ## Start the databases only and wait until they are healthy
 up-all: db-image ## Build the three services into images and start them with the databases
 	$(COMPOSE) --profile app up -d --build --wait
 
+up-load: db-image ## Like up-all, and identity creates 200 verified load-test users (needs TRIPLOR_SEED_PASSWORD)
+	IDENTITY_PROFILES=local,seed $(COMPOSE) --profile app up -d --build --wait
+
+up-chaos: db-image ## Like up-load, with adventure's calls to chat routed through Toxiproxy
+	IDENTITY_PROFILES=local,seed ADVENTURE_CHAT_URL=http://toxiproxy:18083 $(COMPOSE_ALL) up -d --build --wait
+
 down: ## Stop the local stack, keeping its data
-	$(COMPOSE) --profile app down
+	$(COMPOSE_ALL) down
 
 reset: ## Stop the local stack and delete its data
-	$(COMPOSE) --profile app down -v
+	$(COMPOSE_ALL) down -v
 
 test: db-image ## Build everything and run all tests (needs Docker)
 	./mvnw -B verify
@@ -42,3 +50,12 @@ sample-places: ## Load twenty sample cities, enough for the smoke test (the full
 
 smoke: ## Run the end-to-end smoke test against the stack started by `make up-all`
 	infra/scripts/smoke.sh
+
+load-search: ## Load test: search (needs make up-load and make seed-adventures)
+	infra/scripts/load.sh search
+
+load-accept: ## Load test: create a trip, five requests, five accepts (needs make up-load)
+	infra/scripts/load.sh accept
+
+load-cleanup: ## Delete the trips, requests and conversations the load tests created
+	infra/scripts/load-cleanup.sh

@@ -20,7 +20,7 @@ The project is a Flutter client plus a set of Spring Boot services. The backend 
 
 - [Architecture and roadmap](docs/ARCHITECTURE.md): the target system, why each technology is there, and the build order.
 - [Phase 1 plan](docs/plans/phase-1.md) and [Phase 2 plan](docs/plans/phase-2.md): milestone-by-milestone implementation plans.
-- [Performance baseline](docs/perf/phase-1-baseline.md): measurements, starting with the index study that led to dropping one of the search indexes.
+- [Performance baseline](docs/perf/phase-1-baseline.md): the index study that led to dropping one of the search indexes, the load test of the running stack (including what a slow or stopped chat does to accept), and test coverage.
 
 ## Repository layout
 
@@ -103,6 +103,10 @@ Adventure verifies tokens with identity's public key and calls chat when a trave
 
 To have something to search, `make seed-adventures` inserts 100,000 random adventures; `infra/scripts/seed-adventures.sh --delete` removes them again.
 
+### Load tests
+
+`make up-load` starts the stack with 200 load-test users (it needs `TRIPLOR_SEED_PASSWORD` in `.env`). `make load-search` and `make load-accept` then run the k6 scenarios, and `make load-cleanup` removes what they created. The [performance baseline](docs/perf/phase-1-baseline.md) lists every command, including the runs with a slowed and a stopped chat service.
+
 ### Tests
 
 The tests need the Postgres image and a running Docker daemon:
@@ -110,6 +114,8 @@ The tests need the Postgres image and a running Docker daemon:
 ```bash
 make test
 ```
+
+The build measures line coverage with JaCoCo and fails if a module drops below its threshold. The report is in each module's `target/site/jacoco/index.html`.
 
 ### Flutter client
 

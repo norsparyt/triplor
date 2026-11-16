@@ -22,6 +22,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Not managed by Spring Boot. The 3.x line is the one for Boot 4. -->
     <springdoc.version>3.2.0</springdoc.version>
+    <jacoco.version>0.8.16</jacoco.version>
+    <!-- The lowest line coverage the build accepts. Each service sets its own figure. -->
+    <jacoco.line.minimum>0.00</jacoco.line.minimum>
   </properties>
 
   <modules>
@@ -52,4 +55,54 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+  <build>
+    <plugins>
+      <!--
+        Measures which lines the tests execute. `prepare-agent` attaches the recorder to the
+        test JVM, `report` writes target/site/jacoco, and `check` fails the build if line
+        coverage of the module drops below jacoco.line.minimum.
+      -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>jacoco-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>${jacoco.line.minimum}</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

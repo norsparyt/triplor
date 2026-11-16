@@ -2,8 +2,11 @@
 #
 #   make up       the databases only, for running the services from the IDE or with ./mvnw
 #   make up-all   the databases and the three services, built into images
+#   make up-load  the same, with 200 load-test users created in identity
+#   make up-chaos the same again, with adventure's calls to chat going through Toxiproxy
 #
 # The services are in the Compose profile "app", which is why `make up` leaves them out.
+# Toxiproxy is in the profile "chaos".
 name: triplor
 
 # Settings every service container shares.
@@ -63,7 +66,9 @@ services:
       args:
         SERVICE: identity
     environment:
-      SPRING_PROFILES_ACTIVE: local
+      # `make up-load` adds the `seed` profile, which creates verified load-test users.
+      SPRING_PROFILES_ACTIVE: ${IDENTITY_PROFILES:-local}
+      TRIPLOR_SEED_PASSWORD: ${TRIPLOR_SEED_PASSWORD:-}
       IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/identity
       IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?set IDENTITY_DB_PASSWORD in .env}
       TRIPLOR_JWT_PRIVATE_KEY_PATH: /run/secrets/jwt-private.pem
@@ -118,7 +123,8 @@ services:
       ADVENTURE_DB_URL: jdbc:postgresql://postgres:5432/adventure
       ADVENTURE_DB_PASSWORD: ${ADVENTURE_DB_PASSWORD:?set ADVENTURE_DB_PASSWORD in .env}
       IDENTITY_JWKS_URI: http://identity:8081/.well-known/jwks.json
-      CHAT_BASE_URL: http://chat:8083
+      # `make up-chaos` points this at Toxiproxy, which can then delay the call.
+      CHAT_BASE_URL: ${ADVENTURE_CHAT_URL:-http://chat:8083}
       TRIPLOR_INTERNAL_TOKEN: ${TRIPLOR_INTERNAL_TOKEN:?set TRIPLOR_INTERNAL_TOKEN in .env}
     ports:
       - "8082:8082"
@@ -133,6 +139,18 @@ services:
     healthcheck:
       <<: *service-healthcheck
       test: ["CMD", "curl", "-fsS", "http://localhost:8082/actuator/health"]
+
+  # A TCP proxy that can inject faults. Here it sits between adventure and chat, to measure
+  # what a slow dependency costs the caller. Control it with infra/scripts/chaos.sh.
+  toxiproxy:
+    profiles: ["chaos"]
+    image: ghcr.io/shopify/toxiproxy:2.13.0
+    command: ["-host=0.0.0.0", "-config=/config/toxiproxy.json"]
+    volumes:
+      - ./toxiproxy/toxiproxy.json:/config/toxiproxy.json:ro
+    ports:
+      # The control API. The proxied port (18083) is only used inside the Compose network.
+      - "8474:8474"
 
 volumes:
   postgres-data:
