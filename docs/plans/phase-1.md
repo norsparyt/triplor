@@ -2,7 +2,7 @@
 
 Parent document: [../ARCHITECTURE.md](../ARCHITECTURE.md). Next: [phase-2.md](phase-2.md).
 
-**Status (2026-11-16):** M0 to M5 are built, tested and recorded in their sections below. M6 to M8 are still drafts: their SQL and Dockerfiles have not been compiled or run. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
+**Status (2026-11-16):** M0 to M6 are built, tested and recorded in their sections below. M7 and M8 are still drafts: their Dockerfiles have not been compiled or run. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
 
 ## Outcome
 
@@ -635,6 +635,24 @@ INSERT INTO adventure_members (adventure_id, user_id, role) VALUES (:adventureId
 
 **Goal:** message history per trip, stored in MongoDB, readable only by members. REST only in this phase.
 
+**Status:** built and passing (27 new tests; 317 across the build), and smoke-tested end to end with identity, adventure and chat running against the Compose databases: after an accept both people see the conversation and exchange messages, and with chat stopped the accept answers 502 and succeeds on retry.
+
+Decisions made while building it:
+
+- Code lives in `com.triplor.chat.conversation` and `com.triplor.chat.internal`. `ChatStore` holds every MongoDB operation and uses `MongoTemplate`, because the writes depend on specific operators: `$addToSet` and `$setOnInsert` for members, `$max` for the read marker.
+- Message history returns `items` and `nextBefore`, the same page shape as search. Default 30, maximum 100.
+- The conversation list returns one page (default 20, maximum 50). Each row costs two small queries for its unread count; good enough until measured.
+- The unread count ignores the caller's own messages.
+- The conversation's preview is updated only if the message is newer than the one already there, so two sends at once cannot leave an older preview.
+- A repeated `clientMessageId` returns the stored message even if the retry carries a different body. The id is 8 to 64 characters.
+- The read marker must name a message of that conversation (400 otherwise).
+- Timestamps are truncated to milliseconds, which is what MongoDB stores.
+- The internal endpoint takes the secret in `X-Internal-Token`, compares it in constant time, and refuses every call while `TRIPLOR_INTERNAL_TOKEN` is not set. It accepts at most 50 member ids per call.
+- A conversation with no messages sorts by its creation time.
+- The `SYSTEM` message type exists but nothing writes one yet.
+- Local development connects to MongoDB as the root user Compose creates.
+- In adventure, `HttpMembershipNotifier` replaces the logging stand-in. It uses `RestClient` with two-second connect and read timeouts, and any failure (refused connection, timeout, 4xx, 5xx) becomes 502 `CHAT_UNAVAILABLE`.
+
 ### Collections
 
 | Collection | Fields | Indexes |
@@ -643,9 +661,9 @@ INSERT INTO adventure_members (adventure_id, user_id, role) VALUES (:adventureId
 | `messages` | `conversationId`, `senderId`, `clientMessageId`, `type` (`TEXT` or `SYSTEM`), `body` (2,000 characters maximum), `createdAt` | `{conversationId: 1, _id: -1}`; unique on `{conversationId, senderId, clientMessageId}` |
 | `read_states` | `conversationId`, `userId`, `lastReadMessageId` | Unique on `{conversationId, userId}` |
 
-- [ ] One conversation per adventure. A two-person trip is simply a conversation with two members.
-- [ ] User IDs are stored as strings, which avoids the binary UUID representation settings.
-- [ ] Indexes are declared on the document classes with automatic index creation switched on. Say in the README that production would create them through migrations.
+- [x] One conversation per adventure. A two-person trip is simply a conversation with two members.
+- [x] User IDs are stored as strings, which avoids the binary UUID representation settings.
+- [x] Indexes are declared on the document classes with automatic index creation switched on. Say in the README that production would create them through migrations.
 
 ### Endpoints
 
@@ -657,16 +675,18 @@ INSERT INTO adventure_members (adventure_id, user_id, role) VALUES (:adventureId
 | `PUT /conversations/{id}/read` | Body: `lastReadMessageId`. Only ever moves forward |
 | `PUT /internal/conversations/{adventureId}/members` | Body: `memberIds`. Creates the conversation if missing and adds the members with `$addToSet`. Protected by a shared secret header. Temporary; deleted in Phase 2 |
 
-- [ ] Sending writes the message first, then updates the conversation's preview. There is no multi-document transaction; a stale preview repairs itself on the next message.
-- [ ] `ObjectId` values sort by creation time, so the message ID is the pagination cursor.
+- [x] Sending writes the message first, then updates the conversation's preview. There is no multi-document transaction; a stale preview repairs itself on the next message.
+- [x] `ObjectId` values sort by creation time, so the message ID is the pagination cursor.
 
 ### Wire adventure to chat
 
-- [ ] Implement `HttpMembershipNotifier` in adventure with `RestClient`, a two-second timeout and the shared secret header. On first accept it sends both the organizer and the new member.
+- [x] Implement `HttpMembershipNotifier` in adventure with `RestClient`, a two-second timeout and the shared secret header. On first accept it sends both the organizer and the new member.
 
 ### Tests
 
-- [ ] Integration (Testcontainers MongoDB): paging through history returns each message once; a duplicate `clientMessageId` stores one document; a non-member gets 403; the read marker never moves backward; unread counts are correct for two members.
+- [x] Integration, further: twenty simultaneous sends of one message store it once; eight simultaneous first calls for one adventure create one conversation; the internal endpoint refuses a missing or wrong secret; the unread count stops at 99.
+- [x] Unit (adventure): the notifier sends the members with the secret, and reports a server error, a refusal and a closed port as failures.
+- [x] Integration (Testcontainers MongoDB): paging through history returns each message once; a duplicate `clientMessageId` stores one document; a non-member gets 403; the read marker never moves backward; unread counts are correct for two members.
 
 **Done when:** after an accept, both organizer and traveller can list the conversation and exchange messages through the REST API.
 

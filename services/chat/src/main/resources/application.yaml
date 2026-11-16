@@ -1,6 +1,17 @@
 spring:
   application:
     name: chat
+  config:
+    # Lets `./mvnw spring-boot:run` pick up the passwords from the repo-root .env during local development.
+    import: optional:file:../../.env[.properties]
+  mongodb:
+    # Local development connects as the root user Compose creates. A deployment gets its own user.
+    uri: ${CHAT_MONGODB_URI:mongodb://root:${MONGO_ROOT_PASSWORD:}@localhost:27017/chat?authSource=admin}
+  data:
+    mongodb:
+      # Indexes are declared on the document classes and created at start-up. Fine for
+      # development; production would create them deliberately, through migrations.
+      auto-index-creation: true
   security:
     oauth2:
       resourceserver:
@@ -16,3 +27,12 @@ management:
     web:
       exposure:
         include: health,info
+
+triplor:
+  security:
+    public-paths:
+      # No user token here: these calls come from another service and carry the shared secret.
+      - /internal/**
+  internal:
+    # Shared with the adventure service. While it is empty, every internal call is refused.
+    token: ${TRIPLOR_INTERNAL_TOKEN:}

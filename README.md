@@ -10,8 +10,8 @@ The project is a Flutter client plus a set of Spring Boot services. The backend 
 |---|---|
 | Flutter client (`mobile/`) | Adventure create, edit, list and delete against in-memory data |
 | Identity service | Accounts, RS256 access tokens verifiable through a JWKS endpoint, rotating refresh tokens, profiles, and admin-reviewed verification |
-| Adventure service | Place search, and adventure create, read, edit and cancel, with idempotent creates and ETag-based optimistic locking. Search by place, dates and style with keyset pagination, and scored matches. Join requests with seat reservation that cannot oversell under concurrency. Telling chat about new members is a stub until the chat service exists |
-| Chat service | Empty skeleton (Phase 1, in progress) |
+| Adventure service | Place search; adventure create, read, edit and cancel with idempotent creates and ETag-based optimistic locking; search by place, dates and style with keyset pagination; scored matches; join requests with seat reservation that cannot oversell under concurrency |
+| Chat service | One conversation per adventure in MongoDB: message history with keyset pagination, idempotent sending, read markers and unread counts. REST only; adventure adds members through a direct HTTP call that Phase 2 replaces with events |
 | Kafka, Redis, notifications, gateway | Not started (Phase 2) |
 | Flutter integration, admin console, GraphQL, trip planner | Not started (Phase 3) |
 | CI/CD and AWS deployment | CI only; deployment not started (Phase 4) |
@@ -65,6 +65,12 @@ Run the adventure service. It verifies tokens with identity's public key, so ide
 
 ```bash
 ./mvnw spring-boot:run -pl services/adventure
+```
+
+Run the chat service. Adventure calls it when a traveller is accepted, and both need the same `TRIPLOR_INTERNAL_TOKEN` in `.env`.
+
+```bash
+./mvnw spring-boot:run -pl services/chat
 ```
 
 Load the cities that adventures can be posted for. This downloads the GeoNames `cities1000` data set into the git-ignored `.local/` folder and imports it. Run it once, after the adventure service has started for the first time and created its tables.
