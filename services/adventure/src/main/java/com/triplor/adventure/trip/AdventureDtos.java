@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.triplor.adventure.place.PlaceResponse;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -50,9 +51,17 @@ public final class AdventureDtos {
             String status,
             long version,
             Instant createdAt,
-            Instant updatedAt) {
+            Instant updatedAt,
+            /** How many requests are waiting for the organizer. Only on {@code GET /adventures/{id}}. */
+            @JsonInclude(JsonInclude.Include.NON_NULL) Integer interestedCount,
+            /** The caller's own latest request, if they made one. Only on {@code GET /adventures/{id}}. */
+            @JsonInclude(JsonInclude.Include.NON_NULL) AdventureLinks.ViewerRequest viewerRequest) {
 
         static AdventureResponse of(Adventure adventure) {
+            return of(adventure, null, null);
+        }
+
+        static AdventureResponse of(Adventure adventure, Integer interestedCount, AdventureLinks.ViewerRequest viewerRequest) {
             return new AdventureResponse(
                     adventure.getId(),
                     adventure.getOrganizerId(),
@@ -66,7 +75,9 @@ public final class AdventureDtos {
                     adventure.getStatus().name(),
                     adventure.getVersion(),
                     adventure.getCreatedAt(),
-                    adventure.getUpdatedAt());
+                    adventure.getUpdatedAt(),
+                    interestedCount,
+                    viewerRequest);
         }
     }
 }

@@ -10,7 +10,7 @@ The project is a Flutter client plus a set of Spring Boot services. The backend 
 |---|---|
 | Flutter client (`mobile/`) | Adventure create, edit, list and delete against in-memory data |
 | Identity service | Accounts, RS256 access tokens verifiable through a JWKS endpoint, rotating refresh tokens, profiles, and admin-reviewed verification |
-| Adventure service | Place search, and adventure create, read, edit and cancel, with idempotent creates and ETag-based optimistic locking. Search by place, dates and style with keyset pagination, and scored matches. Join requests are next (Phase 1, in progress) |
+| Adventure service | Place search, and adventure create, read, edit and cancel, with idempotent creates and ETag-based optimistic locking. Search by place, dates and style with keyset pagination, and scored matches. Join requests with seat reservation that cannot oversell under concurrency. Telling chat about new members is a stub until the chat service exists |
 | Chat service | Empty skeleton (Phase 1, in progress) |
 | Kafka, Redis, notifications, gateway | Not started (Phase 2) |
 | Flutter integration, admin console, GraphQL, trip planner | Not started (Phase 3) |

@@ -1,5 +1,6 @@
 package com.triplor.adventure.trip;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,6 +19,9 @@ public interface AdventureRepository extends JpaRepository<Adventure, UUID> {
 
     @EntityGraph(attributePaths = "place")
     Optional<Adventure> findWithPlaceById(UUID id);
+
+    @EntityGraph(attributePaths = "place")
+    List<Adventure> findWithPlaceByIdIn(Collection<UUID> ids);
 
     @EntityGraph(attributePaths = "place")
     List<Adventure> findByOrganizerIdOrderByStartDateDescIdDesc(UUID organizerId, Limit limit);

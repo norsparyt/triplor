@@ -2,7 +2,7 @@
 
 Parent document: [../ARCHITECTURE.md](../ARCHITECTURE.md). Next: [phase-2.md](phase-2.md).
 
-**Status (2026-11-16):** M0 to M4 are built, tested and recorded in their sections below. M5 to M8 are still drafts: their SQL and Dockerfiles have not been compiled or run. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
+**Status (2026-11-16):** M0 to M5 are built, tested and recorded in their sections below. M6 to M8 are still drafts: their SQL and Dockerfiles have not been compiled or run. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
 
 ## Outcome
 
@@ -425,7 +425,7 @@ A changed `placeId` also sets `place_id`, `lat` and `lng` in the same statement,
 - [x] Web slice: missing `Idempotency-Key` returns 400; missing `If-Match` returns 428; an unverified caller gets 403 `NOT_VERIFIED`.
 - [x] Integration: the same key replayed returns the identical body and leaves one row; the same key with a different body returns 422; eight threads posting the same key at once leave one row; a stale `If-Match` returns 412, and of two simultaneous edits exactly one wins.
 - [x] Integration, schema: the database itself refuses an oversold trip, an unknown style and backward dates; `location` and `trip_dates` are computed from the plain columns.
-- [ ] Integration (M5): cancelling rejects pending requests.
+- [x] Integration (done in M5): cancelling rejects pending requests.
 
 **Done when:** all of the above pass against the custom Postgres image.
 
@@ -509,6 +509,25 @@ SELECT a.id, a.organizer_id, a.place_id, a.start_date, a.end_date, a.styles,
 
 **Goal:** the core invariant. A trip never has more accepted travellers than seats, whatever the concurrency.
 
+**Status:** built and passing (96 new tests counting repetitions; 290 across the build), and smoke-tested over HTTP with identity and adventure running against the Compose database. The seat-safety test runs 20 times in every build. Removing the `seats_taken < capacity` condition as an experiment made it fail, with the check constraint refusing the extra seats.
+
+Decisions made while building it:
+
+- Code lives in `com.triplor.adventure.joining`. Join requests and members have no JPA entity: `JoinRequestStore` holds every statement and uses `JdbcClient`, so the repository-annotation item below does not apply.
+- The insert uses `ON CONFLICT ... DO NOTHING` against the partial unique index, so a duplicate is "no row inserted" and not an exception that aborts the transaction.
+- A pending request past its `expires_at` is reported as `EXPIRED` everywhere and cannot be accepted, although no job updates the row until Phase 2. When the same traveller asks again, the stale row is marked `EXPIRED` first, so it does not block the new request.
+- Reject and withdraw are idempotent in the same way as accept: repeating the action that produced the current status succeeds. `JoinRequestStateMachine` is a pure function that returns MOVE, NO_OP or INVALID.
+- Accept runs its transaction through `TransactionTemplate` and returns an outcome instead of throwing, so the seat is rolled back when the request is no longer pending and the chat call is visibly outside the transaction.
+- A request on a full trip is 409 `ADVENTURE_FULL`; on a cancelled, completed or started trip it is 409 `ADVENTURE_NOT_OPEN`. "Started" uses the same date rule as search.
+- Accept does not check the start date and does not change `version`. The ETag guards the organizer's own edits; seat counts change underneath it.
+- An accepted traveller cannot leave a trip yet. The state machine has no such transition in Phase 1.
+- Cancelling an adventure rejects its pending requests and keeps accepted members.
+- `GET /adventures/{id}` carries `interestedCount` and, when the caller has made a request, `viewerRequest` (id and status). Other adventure responses leave both out.
+- `GET /adventures/{id}/members` is for members and the organizer only (403 otherwise).
+- The request lists return one page: default 50, maximum 100.
+- `MembershipNotifier` has a logging implementation until chat exists. Tests replace it with a recording one that can also fail on demand, which is how the 502 path is tested.
+- `V6` also gives every existing adventure its organizer row, and the seed script does the same for seeded trips.
+
 ### Schema (`V6__join_requests.sql`)
 
 ```sql
@@ -577,32 +596,34 @@ UPDATE join_requests
 INSERT INTO adventure_members (adventure_id, user_id, role) VALUES (:adventureId, :requesterId, 'MEMBER');
 ```
 
-- [ ] Lock order: every transaction that touches both tables locks the adventure row first, then request rows. Accept and cancel both follow it, so they cannot deadlock each other.
-- [ ] Creating a request reads the adventure with `SELECT ... FOR SHARE`. A concurrent cancel then waits for the insert to commit and rejects it with the other pending requests, so no pending request is left behind on a cancelled trip.
-- [ ] Repository update methods are `@Modifying(clearAutomatically = true, flushAutomatically = true)`.
-- [ ] After the transaction commits, tell chat. Hide this behind an interface, `MembershipNotifier`. The Phase 1 implementation makes an HTTP call; Phase 2 replaces it with an outbox event without touching the service logic.
-- [ ] If the chat call fails, return 502 `CHAT_UNAVAILABLE`. The seat is already taken; a retry of accept is idempotent and calls chat again. This weakness is deliberate and is what Phase 2 removes.
-- [ ] The remote call is never made inside the database transaction.
+- [x] Lock order: every transaction that touches both tables locks the adventure row first, then request rows. Accept and cancel both follow it, so they cannot deadlock each other.
+- [x] Creating a request reads the adventure with `SELECT ... FOR SHARE`. A concurrent cancel then waits for the insert to commit and rejects it with the other pending requests, so no pending request is left behind on a cancelled trip.
+- Not applicable: there are no Spring Data update methods. The statements are in `JoinRequestStore` (see the decisions above).
+- [x] After the transaction commits, tell chat. Hide this behind an interface, `MembershipNotifier`. The Phase 1 implementation makes an HTTP call; Phase 2 replaces it with an outbox event without touching the service logic.
+- [x] If the chat call fails, return 502 `CHAT_UNAVAILABLE`. The seat is already taken; a retry of accept is idempotent and calls chat again. This weakness is deliberate and is what Phase 2 removes.
+- [x] The remote call is never made inside the database transaction.
 
 ### Endpoints
 
 | Method and path | Rules |
 |---|---|
-| `POST /adventures/{id}/join-requests` | Verified, not the organizer, adventure `OPEN`. `Idempotency-Key` required. Body: optional `message`. Errors: 409 `REQUEST_ALREADY_EXISTS`, 409 `ADVENTURE_NOT_OPEN`, 422 `CANNOT_JOIN_OWN_ADVENTURE` |
+| `POST /adventures/{id}/join-requests` | Verified, not the organizer, adventure `OPEN`. `Idempotency-Key` required. Body: optional `message`. Errors: 409 `REQUEST_ALREADY_EXISTS`, 409 `ADVENTURE_FULL`, 409 `ADVENTURE_NOT_OPEN`, 422 `CANNOT_JOIN_OWN_ADVENTURE` |
 | `GET /join-requests?direction=&status=` | `incoming` lists requests on trips I organize; `outgoing` lists mine. This feeds the app's Requests tab |
 | `GET /adventures/{id}/join-requests` | Organizer only |
 | `POST /join-requests/{id}/accept` | Organizer only; idempotent |
 | `POST /join-requests/{id}/reject` | Organizer only; idempotent |
 | `DELETE /join-requests/{id}` | Requester withdraws a pending request; 204 |
-| `GET /adventures/{id}/members` | Members and their roles |
+| `GET /adventures/{id}/members` | Members and their roles. Members only |
 
 ### Tests
 
-- [ ] Unit: one parameterised test covering every state and action pair in the table.
-- [ ] Integration, seat safety: an adventure with 5 seats and 50 pending requests; 50 threads released together by a latch each accept a different request. Assert exactly 5 responses are 200, 45 are 409, `seats_taken` is 5, there are 5 members plus the organizer, and status is `FULL`.
-- [ ] Integration, double accept: two threads accept the same request; one seat is taken and both get 200.
-- [ ] Integration, cancel against accept: run a cancel and an accept on the same trip at the same moment, 100 times. No call fails with a deadlock or a 500, and the end state is always consistent: either the member was accepted before the cancel, or the request was rejected by it.
-- [ ] Integration: a second active request from the same traveller returns 409; a request on a full trip returns 409; withdraw and reject work once and are then idempotent.
+- [x] Unit: one parameterised test covering every state and action pair in the table.
+- [x] Integration, seat safety: an adventure with 5 seats and 50 pending requests; 50 threads released together by a latch each accept a different request. Assert exactly 5 responses are 200, 45 are 409, `seats_taken` is 5, there are 5 members plus the organizer, and status is `FULL`.
+- [x] Integration, double accept: two threads accept the same request; one seat is taken and both get 200.
+- [x] Integration, cancel against accept: run a cancel and an accept on the same trip at the same moment, 100 times. No call fails with a deadlock or a 500, and the end state is always consistent: either the member was accepted before the cancel, or the request was rejected by it.
+- [x] Integration, further races: two requests for the last seat (one wins); one traveller sending two requests at once (one is stored).
+- [x] Integration: chat unreachable returns 502 with the seat kept, and a retry succeeds; an expired request cannot be accepted and does not block a new one; cancelling rejects pending requests.
+- [x] Integration: a second active request from the same traveller returns 409; a request on a full trip returns 409; withdraw and reject work once and are then idempotent.
 
 **Done when:** the seat-safety test passes repeatedly (run it 20 times in a loop).
 

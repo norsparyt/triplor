@@ -89,6 +89,42 @@ public final class AdventureApi {
                 .get("/adventures/mine").header(HttpHeaders.AUTHORIZATION, bearer(userId)));
     }
 
+    public ResultActions requestToJoin(UUID userId, String adventureId, String idempotencyKey, String message)
+            throws Exception {
+        var request = post("/adventures/" + adventureId + "/join-requests")
+                .header(HttpHeaders.AUTHORIZATION, bearer(userId))
+                .header("Idempotency-Key", idempotencyKey);
+        if (message != null) {
+            request.contentType(MediaType.APPLICATION_JSON).content("{\"message\": \"" + message + "\"}");
+        }
+        return mvc.perform(request);
+    }
+
+    /** Asks to join with a fresh key and no message, and returns the request's id. */
+    public String joinRequestId(UUID userId, String adventureId) throws Exception {
+        String response = requestToJoin(userId, adventureId, newKey(), null)
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return JsonPath.read(response, "$.id");
+    }
+
+    public ResultActions accept(UUID userId, String requestId) throws Exception {
+        return mvc.perform(post("/join-requests/" + requestId + "/accept").header(HttpHeaders.AUTHORIZATION, bearer(userId)));
+    }
+
+    public ResultActions reject(UUID userId, String requestId) throws Exception {
+        return mvc.perform(post("/join-requests/" + requestId + "/reject").header(HttpHeaders.AUTHORIZATION, bearer(userId)));
+    }
+
+    public ResultActions withdraw(UUID userId, String requestId) throws Exception {
+        return mvc.perform(delete("/join-requests/" + requestId).header(HttpHeaders.AUTHORIZATION, bearer(userId)));
+    }
+
+    public ResultActions members(UUID userId, String adventureId) throws Exception {
+        return mvc.perform(MockMvcRequestBuilders.get("/adventures/" + adventureId + "/members")
+                .header(HttpHeaders.AUTHORIZATION, bearer(userId)));
+    }
+
     public static String newKey() {
         return "key-" + UUID.randomUUID();
     }

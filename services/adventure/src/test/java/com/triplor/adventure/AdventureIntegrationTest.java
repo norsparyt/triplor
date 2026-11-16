@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Import;
  */
 @SpringBootTest(properties = "spring.flyway.locations=classpath:db/migration,classpath:db/testdata")
 @AutoConfigureMockMvc
-@Import({PostgresContainerConfig.class, TestJwtDecoderConfig.class})
+@Import({PostgresContainerConfig.class, TestJwtDecoderConfig.class, RecordingMembershipNotifier.Config.class})
 public abstract class AdventureIntegrationTest {
 
     public static final long JAIPUR = 1269515;

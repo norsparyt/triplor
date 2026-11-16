@@ -4,7 +4,11 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.triplor.adventure.idempotency.IdempotencyService;
 import com.triplor.adventure.place.Place;
@@ -32,15 +36,17 @@ public class AdventureService {
 
     private final AdventureRepository adventures;
     private final AdventureWriter writer;
+    private final AdventureLinks links;
     private final PlaceRepository places;
     private final IdempotencyService idempotency;
     private final EntityManager entityManager;
     private final Clock clock;
 
-    public AdventureService(AdventureRepository adventures, AdventureWriter writer, PlaceRepository places,
-            IdempotencyService idempotency, EntityManager entityManager, Clock clock) {
+    public AdventureService(AdventureRepository adventures, AdventureWriter writer, AdventureLinks links,
+            PlaceRepository places, IdempotencyService idempotency, EntityManager entityManager, Clock clock) {
         this.adventures = adventures;
         this.writer = writer;
+        this.links = links;
         this.places = places;
         this.idempotency = idempotency;
         this.entityManager = entityManager;
@@ -74,14 +80,29 @@ public class AdventureService {
                 UUID.randomUUID(), organizerId, place, command.startDate(), command.endDate(),
                 command.styles().toArray(String[]::new), command.description(), command.capacity());
         adventures.saveAndFlush(adventure);
+        links.addOrganizer(adventure.getId(), organizerId);
         // The database filled in seats taken, status, version and the timestamps. Read the row
         // back to answer with them.
         return AdventureResponse.of(reload(adventure.getId()));
     }
 
+    /** One adventure, with how many people are waiting to join and the viewer's own request. */
     @Transactional(readOnly = true)
-    public AdventureResponse get(UUID id) {
-        return AdventureResponse.of(find(id));
+    public AdventureResponse get(UUID id, UUID viewerId) {
+        Adventure adventure = find(id);
+        return AdventureResponse.of(
+                adventure, links.pendingRequestCount(id), links.latestRequestOf(id, viewerId).orElse(null));
+    }
+
+    /** Adventures the caller has been accepted on, latest start date first. */
+    @Transactional(readOnly = true)
+    public List<AdventureResponse> listJoinedBy(UUID userId, Integer limit) {
+        int pageSize = limit == null ? MAX_MINE_PAGE : Math.max(1, Math.min(limit, MAX_MINE_PAGE));
+        List<UUID> ids = links.joinedAdventureIds(userId, pageSize);
+        // One query for all of them, then back into the order the ids came in.
+        Map<UUID, Adventure> byId = adventures.findWithPlaceByIdIn(ids).stream()
+                .collect(Collectors.toMap(Adventure::getId, Function.identity()));
+        return ids.stream().map(byId::get).filter(Objects::nonNull).map(AdventureResponse::of).toList();
     }
 
     /** The caller's own adventures, latest start date first. */
@@ -143,7 +164,12 @@ public class AdventureService {
             throw notOpen(current.getStatus());
         }
         // 0 rows here means a concurrent request cancelled it first, which is the outcome asked for.
-        writer.cancel(id);
+        if (writer.cancel(id) == 1) {
+            // The UPDATE above holds the adventure row. Travellers asking to join right now
+            // wait for this transaction, then see CANCELLED; requests that got in before it
+            // are rejected here. Accepted members stay as they are.
+            links.rejectPendingRequests(id);
+        }
     }
 
     /** Why an edit cannot go ahead on this row, or null if it can. */
