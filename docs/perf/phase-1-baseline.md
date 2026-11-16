@@ -2,6 +2,10 @@
 
 Measurements taken while building Phase 1, kept as the "before" for later phases. Each section says what was measured, on what, and how to repeat it.
 
+1. [Index study for the discovery search](#1-index-study-for-the-discovery-search-m4)
+2. [Load test of the running stack](#2-load-test-of-the-running-stack-m8)
+3. [Test coverage](#3-test-coverage-m8)
+
 Parent document: [../plans/phase-1.md](../plans/phase-1.md).
 
 ## 1. Index study for the discovery search (M4)
@@ -136,3 +140,141 @@ Execution Time: 26.619 ms
 - At 500 km with only the location index, most of the 7.3 ms is the start-up of a parallel worker, not reading data: the scan itself takes under 1 ms per process.
 - The planner's row estimates are far off for the combined filter (it expects 1 row and gets 28 to 156). The plans it picks are still reasonable at this size.
 - `adventures_open_feed_idx` on `(start_date, id)` was never chosen. Search always has a location to filter on first; that index is for a feed without one, which does not exist yet.
+
+## 2. Load test of the running stack (M8)
+
+**Measured on 2026-11-17**, against the Compose stack: the three services in containers, PostgreSQL and MongoDB, and k6 in a container on the same machine. This is the "before" for Phase 2, which repeats the same scripts on the same laptop.
+
+### Result
+
+Search, with 100,000 trips in the database. Each virtual user waits 100 to 300 ms between searches.
+
+| Peak virtual users | Searches | Per second (average over the run) | p50 | p95 | p99 | Errors |
+|---|---|---|---|---|---|---|
+| 50 | 24,892 | 156 | 2.7 ms | 6.6 ms | 13.7 ms | 0% |
+| 200 | 100,323 | 627 | 1.9 ms | 4.5 ms | 10.4 ms | 0% |
+
+Accept, with 10 virtual users and no waiting. Each iteration posts a five-seat trip, sends five join requests and accepts all five.
+
+| Chat | Accepts in 90 s | Accepts per second | Accept p50 | Accept p95 | Accept p99 | Errors |
+|---|---|---|---|---|---|---|
+| Healthy, called directly | 71,410 | 793 | 5.2 ms | 11.1 ms | 19.3 ms | 0% |
+| Healthy, through Toxiproxy with no fault (control) | 74,880 | 832 | 5.2 ms | 11.5 ms | 18.9 ms | 0% |
+| Answering 500 ms late, through Toxiproxy | 1,700 | 19 | 523 ms | 540 ms | 559 ms | 0% |
+| Stopped | n/a | n/a | 502 `CHAT_UNAVAILABLE` in about 15 ms; the seat is taken | | | |
+
+What the numbers say:
+
+- **Search is not the bottleneck.** At 200 users the stack answered 627 searches per second with a p95 under 5 ms and was not saturated. The load was limited by the think time, not by the service.
+- **An accept is exactly as slow as chat.** With chat 500 ms late, the accept p95 went from 11 ms to 540 ms and throughput fell from about 800 to 19 accepts per second, a factor of about 40. The organizer waits for a service that has nothing to do with whether the seat can be taken.
+- **The proxy itself costs nothing measurable.** The control run through Toxiproxy with no fault matches the direct run, so the slow run measures the delay and not the proxy.
+- **The other calls are unaffected by a slow chat.** In the slow run a join request still took 4.8 ms at the median. Creating a trip rose from 4.6 to 11.7 ms; the cause was not investigated.
+- **With chat stopped, the accept fails after the seat is taken.** The caller gets a 502, the database has the seat and the member, and chat knows nothing until someone accepts again.
+- **No trip was oversold.** Across all accept runs, warm-ups included, 34,187 trips were filled by 170,935 accepts. Every trip ended with exactly five seats taken and status `FULL`.
+
+This pair, 11 ms against 540 ms at p95, is the comparison Phase 2 has to change: once the accept writes an event instead of calling chat, a slow or stopped chat should not show up in the accept at all.
+
+### Recovery after chat comes back
+
+After chat was started again, accepting the same request succeeded, with still exactly one seat taken. In two runs the first successful retry came 3 s and 0 s after chat reported healthy; in an earlier attempt a single retry after 8 s still failed.
+
+The delay is DNS, not chat. While the chat container is stopped, its name does not resolve inside the Compose network, and the JVM caches a failed lookup for 10 seconds (`networkaddress.cache.negative.ttl`). Adventure keeps getting "unknown host" from its own cache until that entry expires. This is specific to how Compose handles a stopped container, but it is one more way a synchronous dependency leaks into the caller.
+
+### What was run
+
+| | |
+|---|---|
+| Data | 171,939 places (GeoNames), 100,000 seeded trips for search, 200 verified load-test users |
+| Search | `infra/k6/search.js`: 15 s ramp to 40% of the peak, 60 s hold, 15 s ramp to the peak, 60 s hold, 10 s down. Random centre from 36 large cities, radius 25 to 250 km, a date window of 3 to 21 days within the next 170 days, a style filter on half the searches, a second page on a quarter |
+| Accept | `infra/k6/accept.js`: 10 virtual users for 90 s, each with its own organizer and five travellers, 12 requests per iteration |
+| Slow chat | Toxiproxy 2.13.0 between adventure and chat, a `latency` fault of 500 ms on the response |
+| Stopped chat | `infra/scripts/chat-down-demo.sh` |
+
+Each scenario was run once after a short warm-up run whose results were discarded.
+
+Environment: Apple M2 laptop with 8 GB of memory; Docker with 3.9 GB for its virtual machine; no memory or CPU limits on the containers; Java 21, PostgreSQL 17.12, MongoDB 8.0, k6 1.8.3; default connection pool of 10 per service.
+
+To repeat it, with `TRIPLOR_SEED_PASSWORD` and `TRIPLOR_INTERNAL_TOKEN` set in `.env` and the places loaded:
+
+```bash
+make up-load
+```
+
+```bash
+make seed-adventures
+```
+
+```bash
+make load-search
+```
+
+```bash
+VUS=200 make load-search
+```
+
+```bash
+make load-accept
+```
+
+```bash
+infra/scripts/chat-down-demo.sh
+```
+
+Then the slow-dependency runs. `make up-chaos` restarts adventure with its chat address pointing at Toxiproxy.
+
+```bash
+make up-chaos
+```
+
+```bash
+make load-accept
+```
+
+```bash
+infra/scripts/chaos.sh slow 500
+```
+
+```bash
+make load-accept
+```
+
+```bash
+infra/scripts/chaos.sh reset
+```
+
+Afterwards, remove what the runs created (`--users` also deletes the load-test users):
+
+```bash
+infra/scripts/load-cleanup.sh --users
+```
+
+```bash
+infra/scripts/seed-adventures.sh --delete
+```
+
+In the k6 summary, read `search_ms` and `accept_ms`. The built-in `http_req_duration` also contains the 200 logins done during setup.
+
+### What this does not show
+
+- k6, the services and both databases shared one laptop, so they competed for the same CPU and memory. The figures are for comparison with Phase 2 on this machine, not a capacity estimate.
+- One run per scenario. The two healthy accept runs (793 and 832 per second) give a rough idea of the run-to-run variation; nothing smaller than that is meaningful.
+- The runs are short, at most 160 seconds. Nothing here says how the system behaves after hours, with a full heap or a grown database.
+- The accept test has no waiting between requests and only 10 users, so it measures the speed of the path, not behaviour under many concurrent organizers.
+- All traffic comes from one k6 process over the container network, with connections kept open.
+
+## 3. Test coverage (M8)
+
+Line coverage from JaCoCo, measured by `./mvnw verify` on 2026-11-17 with 318 tests.
+
+| Module | Lines covered | Build fails below |
+|---|---|---|
+| `libs/common` | 96.2% (101 of 105) | 94% |
+| identity | 95.3% (470 of 493) | 93% |
+| adventure | 98.2% (766 of 780) | 96% |
+| chat | 96.2% (153 of 159) | 94% |
+
+By package, the business logic is at or near full coverage: `adventure.trip` and `adventure.discovery` 100%, `adventure.joining` 97.8%, `chat.conversation` 97.1%, `identity.token` 97.6%. The lowest is `identity.config` at 76.3%; the uncovered lines are error paths for an unreadable signing key. Each service's `main` class accounts for two uncovered lines.
+
+The reports are in each module's `target/site/jacoco/index.html` after a build. The thresholds are the `jacoco.line.minimum` property in each module's `pom.xml`.
+
+Coverage says which lines ran, not whether the assertions are good. The seat-safety test is the stronger evidence: removing the `seats_taken < capacity` condition makes it fail.

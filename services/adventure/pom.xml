@@ -14,6 +14,11 @@
   <name>adventure</name>
   <description>Triplor adventure service: places, adventures, idempotent creates</description>
 
+  <properties>
+    <!-- Just below the line coverage measured on 2026-11-17 (docs/perf/phase-1-baseline.md). -->
+    <jacoco.line.minimum>0.96</jacoco.line.minimum>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.triplor</groupId>

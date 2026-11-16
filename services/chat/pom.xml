@@ -14,6 +14,11 @@
   <name>chat</name>
   <description>Triplor chat service: conversations and messages in MongoDB</description>
 
+  <properties>
+    <!-- Just below the line coverage measured on 2026-11-17 (docs/perf/phase-1-baseline.md). -->
+    <jacoco.line.minimum>0.94</jacoco.line.minimum>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.triplor</groupId>

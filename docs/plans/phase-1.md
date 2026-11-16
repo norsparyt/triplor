@@ -2,7 +2,7 @@
 
 Parent document: [../ARCHITECTURE.md](../ARCHITECTURE.md). Next: [phase-2.md](phase-2.md).
 
-**Status (2026-11-17):** M0 to M7 are built, tested and recorded in their sections below. M8 is still a draft. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
+**Status (2026-11-17):** Phase 1 is complete: M0 to M8 are built, tested and recorded in their sections below. What remains is tagging the merge commit `v0.1-phase1`. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
 
 ## Outcome
 
@@ -745,14 +745,26 @@ ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
 
 **Goal:** numbers you measured yourself, kept for comparison with Phase 2.
 
-- [ ] Seed: places, 100,000 adventures (from M4) and 200 verified users (the `seed` profile from M2).
-- [ ] `infra/k6/search.js`: ramp up virtual users calling search with random centres, dates and styles.
-- [ ] `infra/k6/accept.js`: each iteration creates a five-seat trip, sends five requests and accepts them. Tag the accept call so its latency is reported separately.
-- [ ] Record p50, p95 and p99, requests per second and error rate for search and for accept in `docs/perf/phase-1-baseline.md`, along with the machine, the data volume and the exact commands.
-- [ ] Failure demonstration: stop the chat container and run accept. Record that it returns 502 while the seat is still taken.
-- [ ] Slow-dependency run: add Toxiproxy to Compose under a profile named `chaos`, route the adventure-to-chat call through it, add 500 ms of latency and rerun `accept.js`. Record the accept p95. In Phase 1 the caller pays for that delay; Phase 2 should remove it, and this pair of runs is the comparison that matters most.
-- [ ] Add JaCoCo and note line coverage for the service and domain packages. Set the CI gate just below the current figure.
-- [ ] Tag the commit `v0.1-phase1`.
+**Status:** measured and written up in [../perf/phase-1-baseline.md](../perf/phase-1-baseline.md), sections 2 and 3. The headline: accept p95 is 11 ms with chat healthy and 540 ms with chat answering 500 ms late, and throughput falls from about 800 to 19 accepts per second. The tag is the one item left, and it is a manual step.
+
+Decisions made while building it:
+
+- `make up-load` starts the stack with identity's `seed` profile; `make up-chaos` also routes adventure's chat calls through Toxiproxy 2.13.0. `infra/scripts/chaos.sh` adds and removes the delay.
+- The load scripts share `infra/k6/lib.js` and log in as the seeded users in `setup()`. Each records its own trend metric (`search_ms`, `accept_ms`), because the built-in duration includes those logins.
+- Search was run at 50 and at 200 peak users, since 50 did not come near saturating it.
+- A control run through the proxy with no fault was added, to show the proxy itself costs nothing.
+- The stopped-chat demonstration is a script, `infra/scripts/chat-down-demo.sh`. Its retry repeats until it succeeds, because the JVM caches the failed DNS lookup of the stopped container for 10 seconds.
+- `infra/scripts/load-cleanup.sh` removes what the runs created.
+- JaCoCo 0.8.16 is configured in the parent POM. Each module's `jacoco.line.minimum` is two points below its measured line coverage.
+
+- [x] Seed: places, 100,000 adventures (from M4) and 200 verified users (the `seed` profile from M2).
+- [x] `infra/k6/search.js`: ramp up virtual users calling search with random centres, dates and styles.
+- [x] `infra/k6/accept.js`: each iteration creates a five-seat trip, sends five requests and accepts them. Tag the accept call so its latency is reported separately.
+- [x] Record p50, p95 and p99, requests per second and error rate for search and for accept in `docs/perf/phase-1-baseline.md`, along with the machine, the data volume and the exact commands.
+- [x] Failure demonstration: stop the chat container and run accept. Record that it returns 502 while the seat is still taken.
+- [x] Slow-dependency run: add Toxiproxy to Compose under a profile named `chaos`, route the adventure-to-chat call through it, add 500 ms of latency and rerun `accept.js`. Record the accept p95. In Phase 1 the caller pays for that delay; Phase 2 should remove it, and this pair of runs is the comparison that matters most.
+- [x] Add JaCoCo and note line coverage for the service and domain packages. Set the CI gate just below the current figure.
+- [ ] Tag the commit `v0.1-phase1`. Manual: after this milestone is merged into `main`.
 
 Laptop numbers are not production numbers. What matters is the comparison with Phase 2 on the same machine.
 
@@ -798,6 +810,8 @@ Laptop numbers are not production numbers. What matters is the comparison with P
 - **Generated range column:** an update that makes `end_date` earlier than `start_date` fails while computing `trip_dates`, before the named check constraint is reached. The error is still a constraint violation, but it does not name `adventures_dates_chk`.
 - **JIT in `EXPLAIN ANALYZE`:** a plan the planner thinks is expensive gets JIT-compiled, and the compile time (roughly 150 to 200 ms here) is part of "Execution Time". Compare sequential scans with `SET jit = off` as well.
 - **Low-selectivity indexes:** the planner may add an index to a `BitmapAnd` even when it matches half the table. Measure before assuming an index helps.
+- **DNS caching in the JVM:** a failed lookup is cached for 10 seconds. After a stopped Compose container comes back, its callers keep failing with "unknown host" until that expires.
+- **`docker compose up <service>` with different variables:** Compose recreates dependencies whose configuration no longer matches. Use `start` to bring back one stopped container untouched.
 - **Generated columns:** if your PostGIS build rejects the `location` expression as not immutable, drop the generated column and set `location` explicitly in the insert statement.
 - **Emulation:** do not fall back to the amd64 `postgis/postgis` image under emulation; it is slow and makes the concurrency tests flaky.
 - **Connection pool:** Hikari defaults to 10 connections, so the 50-thread test queues for connections. That is fine; do not raise the pool to make the test faster.

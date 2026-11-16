@@ -15,6 +15,11 @@
   <description>Cross-cutting code shared by every service. Never domain types.</description>
 
   <!-- A plain library jar: no spring-boot-maven-plugin here, so it is not repackaged as an executable. -->
+  <properties>
+    <!-- Just below the line coverage measured on 2026-11-17 (docs/perf/phase-1-baseline.md). -->
+    <jacoco.line.minimum>0.94</jacoco.line.minimum>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
