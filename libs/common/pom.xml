@@ -28,6 +28,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
     </dependency>
+    <!-- Optional: only services that document their API bring springdoc themselves. -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>com.triplor</groupId>

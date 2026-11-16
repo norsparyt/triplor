@@ -20,6 +20,8 @@
   <properties>
     <java.version>21</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Not managed by Spring Boot. The 3.x line is the one for Boot 4. -->
+    <springdoc.version>3.2.0</springdoc.version>
   </properties>
 
   <modules>
@@ -42,6 +44,11 @@
         <groupId>com.triplor</groupId>
         <artifactId>test-support</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        <version>${springdoc.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

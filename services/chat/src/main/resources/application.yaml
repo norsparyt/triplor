@@ -18,6 +18,8 @@ spring:
         jwt:
           # Tokens are verified locally with identity's public key, fetched lazily from here.
           jwk-set-uri: ${IDENTITY_JWKS_URI:http://localhost:8081/.well-known/jwks.json}
+          # A token must have been issued for this API, not for some other use of the same key.
+          audiences: triplor-api
 
 server:
   port: 8083
@@ -36,3 +38,10 @@ triplor:
   internal:
     # Shared with the adventure service. While it is empty, every internal call is refused.
     token: ${TRIPLOR_INTERNAL_TOKEN:}
+
+springdoc:
+  # The API description and Swagger UI are off by default and switched on by the `local` profile.
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

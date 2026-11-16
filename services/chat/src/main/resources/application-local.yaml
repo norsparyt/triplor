@@ -1,0 +1,16 @@
+# Local development only (`--spring.profiles.active=local`, and the Compose stack).
+# Serves the OpenAPI description at /v3/api-docs and the Swagger UI at /swagger-ui.html.
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+triplor:
+  security:
+    # A list in a profile file replaces the base list, so the base entries are repeated here.
+    public-paths:
+      - /internal/**
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /swagger-ui.html

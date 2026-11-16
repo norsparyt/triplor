@@ -25,6 +25,37 @@ jobs:
       - name: Build and test
         run: ./mvnw -B -ntp verify
 
+  smoke:
+    name: Stack smoke test (Compose)
+    needs: backend
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure the stack
+        run: |
+          cp .env.example .env
+          # The smoke test verifies its users through the admin API, so the stack needs an admin.
+          {
+            echo "TRIPLOR_ADMIN_EMAIL=ci-admin@triplor.test"
+            echo "TRIPLOR_ADMIN_PASSWORD=$(openssl rand -hex 16)"
+          } >> .env
+          make keys
+          # A key for this run only. The container user (uid 10001) is not the runner's user
+          # and must be able to read the mounted file.
+          chmod 644 .local/jwt-private.pem
+      - name: Build the images and start the stack
+        run: make up-all
+      - name: Load sample places
+        run: make sample-places
+      - name: Run the smoke test
+        run: make smoke
+      - name: Show service logs
+        if: failure()
+        run: docker compose --env-file .env -f infra/compose/compose.yaml --profile app logs --no-color --tail 200
+      - name: Stop the stack
+        if: always()
+        run: make reset
+
   mobile:
     name: Mobile (Flutter)
     runs-on: ubuntu-24.04

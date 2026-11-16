@@ -14,7 +14,7 @@ The project is a Flutter client plus a set of Spring Boot services. The backend 
 | Chat service | One conversation per adventure in MongoDB: message history with keyset pagination, idempotent sending, read markers and unread counts. REST only; adventure adds members through a direct HTTP call that Phase 2 replaces with events |
 | Kafka, Redis, notifications, gateway | Not started (Phase 2) |
 | Flutter integration, admin console, GraphQL, trip planner | Not started (Phase 3) |
-| CI/CD and AWS deployment | CI only; deployment not started (Phase 4) |
+| CI/CD and AWS deployment | CI runs the tests and a smoke test against the Compose stack; deployment not started (Phase 4) |
 
 ## Documentation
 
@@ -43,7 +43,39 @@ No global Maven install is needed; the wrapper (`./mvnw`) downloads it.
 
 ## Running
 
-Start the local databases (PostgreSQL with PostGIS, and MongoDB). Copy `.env.example` to `.env` and set the passwords first.
+Copy `.env.example` to `.env` and set the values first. Generate the signing key once; it goes into the git-ignored `.local/` folder.
+
+```bash
+make keys
+```
+
+### The whole backend in containers
+
+Build the three services into images and start them with PostgreSQL and MongoDB:
+
+```bash
+make up-all
+```
+
+Load twenty sample cities so that adventures can be created (or `make places` for the full GeoNames set):
+
+```bash
+make sample-places
+```
+
+Run the end-to-end smoke test. It registers two users, has the admin verify them, posts a trip, finds it by search, joins, accepts, and exchanges messages. It needs `TRIPLOR_ADMIN_EMAIL` and `TRIPLOR_ADMIN_PASSWORD` in `.env`.
+
+```bash
+make smoke
+```
+
+The services listen on 8081 (identity), 8082 (adventure) and 8083 (chat). Each serves its API description at `/v3/api-docs` and a Swagger UI at `/swagger-ui.html`, in this local stack only.
+
+On Linux, the container user (uid 10001) must be able to read `.local/jwt-private.pem`.
+
+### Services from the IDE or Maven
+
+Start only the databases:
 
 ```bash
 make up
@@ -51,39 +83,27 @@ make up
 
 PostgreSQL is published on host port 5433, so it cannot collide with a PostgreSQL already installed on the machine.
 
-Run the identity service. It needs a signing key, which `make keys` generates once into the git-ignored `.local/` folder.
-
-```bash
-make keys
-```
-
 ```bash
 ./mvnw spring-boot:run -pl services/identity
 ```
-
-Run the adventure service. It verifies tokens with identity's public key, so identity must be running too.
-
-```bash
-./mvnw spring-boot:run -pl services/adventure
-```
-
-Run the chat service. Adventure calls it when a traveller is accepted, and both need the same `TRIPLOR_INTERNAL_TOKEN` in `.env`.
 
 ```bash
 ./mvnw spring-boot:run -pl services/chat
 ```
 
-Load the cities that adventures can be posted for. This downloads the GeoNames `cities1000` data set into the git-ignored `.local/` folder and imports it. Run it once, after the adventure service has started for the first time and created its tables.
-
 ```bash
-make places
+./mvnw spring-boot:run -pl services/adventure
 ```
 
-To have something to search, insert 100,000 random adventures. `infra/scripts/seed-adventures.sh --delete` removes them again.
+Adventure verifies tokens with identity's public key and calls chat when a traveller is accepted, so start it last. Add `-Dspring-boot.run.profiles=local` for the Swagger UI.
 
-```bash
-make seed-adventures
-```
+### Data
+
+`make places` downloads the GeoNames `cities1000` data set into `.local/` and imports it. Run it after the adventure service has started once and created its tables.
+
+To have something to search, `make seed-adventures` inserts 100,000 random adventures; `infra/scripts/seed-adventures.sh --delete` removes them again.
+
+### Tests
 
 The tests need the Postgres image and a running Docker daemon:
 
@@ -91,13 +111,13 @@ The tests need the Postgres image and a running Docker daemon:
 make test
 ```
 
-Run the Flutter client:
+### Flutter client
 
 ```bash
 cd mobile && flutter pub get && flutter run
 ```
 
-`make help` lists the other targets.
+`make help` lists every target.
 
 ## Data sources
 

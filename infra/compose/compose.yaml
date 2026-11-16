@@ -1,6 +1,20 @@
-# Local development stack. Start it with `make up` from the repo root.
-# Phase 1, milestone M0: databases only. Services are added in M7.
+# Local stack. From the repo root:
+#
+#   make up       the databases only, for running the services from the IDE or with ./mvnw
+#   make up-all   the databases and the three services, built into images
+#
+# The services are in the Compose profile "app", which is why `make up` leaves them out.
 name: triplor
+
+# Settings every service container shares.
+x-service: &service
+  profiles: ["app"]
+  restart: "no"
+  healthcheck: &service-healthcheck
+    interval: 5s
+    timeout: 3s
+    retries: 30
+    start_period: 20s
 
 services:
   postgres:
@@ -39,6 +53,86 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  identity:
+    <<: *service
+    image: triplor/identity:local
+    build:
+      context: ../..
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE: identity
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/identity
+      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?set IDENTITY_DB_PASSWORD in .env}
+      TRIPLOR_JWT_PRIVATE_KEY_PATH: /run/secrets/jwt-private.pem
+      TRIPLOR_ADMIN_EMAIL: ${TRIPLOR_ADMIN_EMAIL:-}
+      TRIPLOR_ADMIN_PASSWORD: ${TRIPLOR_ADMIN_PASSWORD:-}
+    volumes:
+      # Created by `make keys`. The container user (uid 10001) must be able to read it.
+      - ../../.local/jwt-private.pem:/run/secrets/jwt-private.pem:ro
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/actuator/health"]
+
+  chat:
+    <<: *service
+    image: triplor/chat:local
+    build:
+      context: ../..
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE: chat
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      CHAT_MONGODB_URI: mongodb://root:${MONGO_ROOT_PASSWORD}@mongo:27017/chat?authSource=admin
+      IDENTITY_JWKS_URI: http://identity:8081/.well-known/jwks.json
+      TRIPLOR_INTERNAL_TOKEN: ${TRIPLOR_INTERNAL_TOKEN:?set TRIPLOR_INTERNAL_TOKEN in .env}
+    ports:
+      - "8083:8083"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8083/actuator/health"]
+
+  adventure:
+    <<: *service
+    image: triplor/adventure:local
+    build:
+      context: ../..
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE: adventure
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      ADVENTURE_DB_URL: jdbc:postgresql://postgres:5432/adventure
+      ADVENTURE_DB_PASSWORD: ${ADVENTURE_DB_PASSWORD:?set ADVENTURE_DB_PASSWORD in .env}
+      IDENTITY_JWKS_URI: http://identity:8081/.well-known/jwks.json
+      CHAT_BASE_URL: http://chat:8083
+      TRIPLOR_INTERNAL_TOKEN: ${TRIPLOR_INTERNAL_TOKEN:?set TRIPLOR_INTERNAL_TOKEN in .env}
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      # Phase 1 only: accept calls chat directly. The dependency goes away with the call.
+      chat:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-fsS", "http://localhost:8082/actuator/health"]
 
 volumes:
   postgres-data:

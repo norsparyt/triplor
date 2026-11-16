@@ -43,3 +43,10 @@ triplor:
     # Used only by the `seed` profile, which creates verified load-test users.
     seed-user-count: 200
     seed-password: ${TRIPLOR_SEED_PASSWORD:}
+
+springdoc:
+  # The API description and Swagger UI are off by default and switched on by the `local` profile.
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
