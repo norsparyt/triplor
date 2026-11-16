@@ -64,20 +64,26 @@ public class AdventureController {
         return response.body(adventure);
     }
 
-    /** The caller's adventures. Only {@code role=organizer} exists so far; joined trips arrive with join requests. */
+    /**
+     * The caller's adventures: {@code role=organizer} (the default) lists the ones they
+     * organize, {@code role=joined} the ones they have been accepted on.
+     */
     @GetMapping("/mine")
     List<AdventureResponse> mine(CurrentUser user,
             @RequestParam(name = "role", defaultValue = "organizer") String role,
             @RequestParam(name = "limit", required = false) Integer limit) {
-        if (!"organizer".equalsIgnoreCase(role)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "role must be 'organizer'");
+        if ("organizer".equalsIgnoreCase(role)) {
+            return adventures.listOrganizedBy(user.id(), limit);
         }
-        return adventures.listOrganizedBy(user.id(), limit);
+        if ("joined".equalsIgnoreCase(role)) {
+            return adventures.listJoinedBy(user.id(), limit);
+        }
+        throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "role must be 'organizer' or 'joined'");
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<AdventureResponse> get(@PathVariable UUID id) {
-        AdventureResponse adventure = adventures.get(id);
+    ResponseEntity<AdventureResponse> get(CurrentUser user, @PathVariable UUID id) {
+        AdventureResponse adventure = adventures.get(id, user.id());
         return ResponseEntity.ok().eTag(ETags.of(adventure.version())).body(adventure);
     }
 

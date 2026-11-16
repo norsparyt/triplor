@@ -14,7 +14,10 @@ cd "$(dirname "$0")/../.."
 PSQL="docker compose --env-file .env -f infra/compose/compose.yaml exec -T postgres psql -v ON_ERROR_STOP=1 --username adventure_app --dbname adventure"
 
 if [ "${1:-}" = "--delete" ]; then
-  $PSQL -c "DELETE FROM adventures WHERE description LIKE '[seed]%'" -c "VACUUM ANALYZE adventures"
+  $PSQL -c "DELETE FROM join_requests WHERE adventure_id IN (SELECT id FROM adventures WHERE description LIKE '[seed]%')" \
+        -c "DELETE FROM adventure_members WHERE adventure_id IN (SELECT id FROM adventures WHERE description LIKE '[seed]%')" \
+        -c "DELETE FROM adventures WHERE description LIKE '[seed]%'" \
+        -c "VACUUM ANALYZE adventures"
   exit 0
 fi
 
@@ -56,6 +59,11 @@ SELECT gen_random_uuid(), gen_random_uuid(), c.id, c.lat, c.lng,
        k.capacity
   FROM picks k
   JOIN cities c ON c.rn = k.city_rn;
+
+-- Every adventure has its organizer as a member.
+INSERT INTO adventure_members (adventure_id, user_id, role)
+SELECT id, organizer_id, 'ORGANIZER' FROM adventures WHERE description LIKE '[seed]%'
+ON CONFLICT DO NOTHING;
 
 VACUUM ANALYZE adventures;
 

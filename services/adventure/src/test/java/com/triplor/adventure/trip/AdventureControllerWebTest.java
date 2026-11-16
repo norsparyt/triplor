@@ -179,6 +179,6 @@ class AdventureControllerWebTest {
                 UUID.randomUUID(), UUID.randomUUID(),
                 new PlaceResponse(1269515, "Jaipur", "Rajasthan", "IN", 26.91962, 75.78781),
                 LocalDate.parse("2030-03-01"), LocalDate.parse("2030-03-05"),
-                List.of("CULTURE"), "Forts and food", 3, 0, "OPEN", version, now, now);
+                List.of("CULTURE"), "Forts and food", 3, 0, "OPEN", version, now, now, null, null);
     }
 }
