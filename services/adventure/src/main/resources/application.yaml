@@ -1,6 +1,19 @@
 spring:
   application:
     name: adventure
+  config:
+    # Lets `./mvnw spring-boot:run` pick up the passwords from the repo-root .env during local development.
+    import: optional:file:../../.env[.properties]
+  datasource:
+    url: ${ADVENTURE_DB_URL:jdbc:postgresql://localhost:5433/adventure}
+    username: ${ADVENTURE_DB_USER:adventure_app}
+    password: ${ADVENTURE_DB_PASSWORD:}
+  jpa:
+    # Flyway owns the schema. Hibernate only checks that the entities match it.
+    hibernate:
+      ddl-auto: validate
+    # Do not keep a database connection open while the response is being written.
+    open-in-view: false
   security:
     oauth2:
       resourceserver:

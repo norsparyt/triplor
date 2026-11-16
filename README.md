@@ -10,7 +10,8 @@ The project is a Flutter client plus a set of Spring Boot services. The backend 
 |---|---|
 | Flutter client (`mobile/`) | Adventure create, edit, list and delete against in-memory data |
 | Identity service | Accounts, RS256 access tokens verifiable through a JWKS endpoint, rotating refresh tokens, profiles, and admin-reviewed verification |
-| Adventure and chat services | Empty skeletons (Phase 1, in progress) |
+| Adventure service | Place search, and adventure create, read, edit and cancel, with idempotent creates and ETag-based optimistic locking. Search, matches and join requests are next (Phase 1, in progress) |
+| Chat service | Empty skeleton (Phase 1, in progress) |
 | Kafka, Redis, notifications, gateway | Not started (Phase 2) |
 | Flutter integration, admin console, GraphQL, trip planner | Not started (Phase 3) |
 | CI/CD and AWS deployment | CI only; deployment not started (Phase 4) |
@@ -27,7 +28,7 @@ mobile/          Flutter client
 services/        identity, adventure, chat (Spring Boot)
 libs/common/     cross-cutting code shared by the services
 libs/test-support/  shared test helpers
-infra/           Docker image for Postgres, Compose file
+infra/           Docker image for Postgres, Compose file, scripts
 docs/            architecture and plans
 ```
 
@@ -59,6 +60,18 @@ make keys
 ./mvnw spring-boot:run -pl services/identity
 ```
 
+Run the adventure service. It verifies tokens with identity's public key, so identity must be running too.
+
+```bash
+./mvnw spring-boot:run -pl services/adventure
+```
+
+Load the cities that adventures can be posted for. This downloads the GeoNames `cities1000` data set into the git-ignored `.local/` folder and imports it. Run it once, after the adventure service has started for the first time and created its tables.
+
+```bash
+make places
+```
+
 The tests need the Postgres image and a running Docker daemon:
 
 ```bash
@@ -72,3 +85,7 @@ cd mobile && flutter pub get && flutter run
 ```
 
 `make help` lists the other targets.
+
+## Data sources
+
+Place names and coordinates come from [GeoNames](https://www.geonames.org), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The data is downloaded by `make places` and is not stored in this repository.
