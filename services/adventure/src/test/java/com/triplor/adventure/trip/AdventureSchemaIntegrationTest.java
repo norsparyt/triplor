@@ -77,6 +77,18 @@ class AdventureSchemaIntegrationTest extends AdventureIntegrationTest {
     }
 
     @Test
+    void theIndexesAreTheOnesTheIndexStudyKept() {
+        // The styles GIN index was measured to slow the search down and was dropped in V5.
+        assertThat(jdbc.queryForList("select indexname from pg_indexes where tablename = 'adventures'", String.class))
+                .containsExactlyInAnyOrder(
+                        "adventures_pkey",
+                        "adventures_location_gix",
+                        "adventures_dates_gix",
+                        "adventures_organizer_idx",
+                        "adventures_open_feed_idx");
+    }
+
+    @Test
     void anAdventureMustPointAtAKnownPlace() {
         assertThatThrownBy(() -> jdbc.update("update adventures set place_id = 999 where id = ?", adventureId))
                 .isInstanceOf(DataIntegrityViolationException.class);

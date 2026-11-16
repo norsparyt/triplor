@@ -1,9 +1,9 @@
 COMPOSE := docker compose --env-file .env -f infra/compose/compose.yaml
 
-.PHONY: help db-image up down reset test keys places
+.PHONY: help db-image up down reset test keys places seed-adventures index-study
 
 help: ## List the available targets
-	@grep -E "^[a-z-]+:.*##" $(MAKEFILE_LIST) | awk -F ":.*## " '{printf "  %-10s %s\n", $$1, $$2}'
+	@grep -E "^[a-z-]+:.*##" $(MAKEFILE_LIST) | awk -F ":.*## " '{printf "  %-16s %s\n", $$1, $$2}'
 
 db-image: ## Build the Postgres + PostGIS image
 	docker build -t triplor/postgres:17 infra/docker/postgres
@@ -27,3 +27,9 @@ keys: ## Generate the development JWT signing key into .local/ (git-ignored)
 
 places: ## Load the GeoNames cities into the adventure database (run the adventure service once first)
 	infra/scripts/seed-places.sh
+
+seed-adventures: ## Insert 100,000 random adventures for trying out search (remove: infra/scripts/seed-adventures.sh --delete)
+	infra/scripts/seed-adventures.sh
+
+index-study: ## Measure the search query under different index sets (development database only)
+	infra/scripts/index-study.sh

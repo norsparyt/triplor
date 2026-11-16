@@ -4,11 +4,11 @@ Triplor is a travel-matching app. Travellers post an adventure (destination, dat
 
 This document records where the project stands, the target system, and the order it will be built in.
 
-**Status (2026-11-16):** Phase 1 is under way. The Flutter client, the monorepo skeleton, the identity service (accounts, tokens, profiles, verification) and the adventure service's places and idempotent CRUD exist; everything else below is still a plan.
+**Status (2026-11-16):** Phase 1 is under way. The Flutter client, the monorepo skeleton, the identity service (accounts, tokens, profiles, verification) and the adventure service's places, idempotent CRUD, search and matches exist; everything else below is still a plan.
 
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | Core backend: identity, adventure and chat services ([detailed plan](plans/phase-1.md)) | In progress: M0 to M3 of 9 milestones done |
+| 1 | Core backend: identity, adventure and chat services ([detailed plan](plans/phase-1.md)) | In progress: M0 to M4 of 9 milestones done |
 | 2 | Kafka, Redis, notification service, gateway ([detailed plan](plans/phase-2.md)) | Not started |
 | 3 | Flutter integration, React admin, GraphQL, RAG planner | Not started |
 | 4 | CI/CD and AWS deployment | Not started |
@@ -196,7 +196,7 @@ Build the identity, adventure and chat services (chat is REST-only for now).
 | | `refresh_tokens` | `token_hash`, `family_id`, `expires_at`, `revoked_at` (rotation with reuse detection) |
 | | `verification_requests` | `user_id`, `document_media_id`, `status`, `reviewed_by` |
 | adventure (Postgres) | `places` | GeoNames cities: `name`, `country_code`, `location`; trigram index for autocomplete |
-| | `adventures` | `organizer_id`, `place_id`, `lat`, `lng`, `start_date`, `end_date`, `styles text[]`, `capacity`, `seats_taken`, `status`, `version`; generated columns `location geography` and `trip_dates daterange` with GiST indexes; GIN on styles; a check that `seats_taken` never exceeds `capacity` |
+| | `adventures` | `organizer_id`, `place_id`, `lat`, `lng`, `start_date`, `end_date`, `styles text[]`, `capacity`, `seats_taken`, `status`, `version`; generated columns `location geography` and `trip_dates daterange` with GiST indexes; a check that `seats_taken` never exceeds `capacity` |
 | | `join_requests` | `adventure_id`, `requester_id`, `message`, `status`, `expires_at`; partial unique index on (adventure, requester) while pending or accepted |
 | | `adventure_members` | `adventure_id`, `user_id`, `role` |
 | | `idempotency_keys` | `user_id`, `key`, `request_hash`, stored response; unique on (user, key) |

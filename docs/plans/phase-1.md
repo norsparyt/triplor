@@ -2,7 +2,7 @@
 
 Parent document: [../ARCHITECTURE.md](../ARCHITECTURE.md). Next: [phase-2.md](phase-2.md).
 
-**Status (2026-11-16):** M0 to M3 are built, tested and recorded in their sections below. M4 to M8 are still drafts: their SQL and Dockerfiles have not been compiled or run. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
+**Status (2026-11-16):** M0 to M4 are built, tested and recorded in their sections below. M5 to M8 are still drafts: their SQL and Dockerfiles have not been compiled or run. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
 
 ## Outcome
 
@@ -336,7 +336,7 @@ CREATE TABLE adventures (
 );
 CREATE INDEX adventures_location_gix  ON adventures USING gist (location);
 CREATE INDEX adventures_dates_gix     ON adventures USING gist (trip_dates);
-CREATE INDEX adventures_styles_gin    ON adventures USING gin (styles);
+CREATE INDEX adventures_styles_gin    ON adventures USING gin (styles);   -- dropped again in V5 (M4)
 CREATE INDEX adventures_organizer_idx ON adventures (organizer_id, start_date DESC);
 CREATE INDEX adventures_open_feed_idx ON adventures (start_date, id) WHERE status = 'OPEN';
 
@@ -437,6 +437,22 @@ A changed `placeId` also sets `place_id`, `lat` and `lng` in the same statement,
 
 **Goal:** find open trips by place, dates and style, fast, with stable pagination.
 
+**Status:** built and passing (38 new tests, 36 of them in the adventure service; 194 across the build), smoke-tested over HTTP against 100,000 seeded adventures, and the index study is written up in [../perf/phase-1-baseline.md](../perf/phase-1-baseline.md).
+
+Decisions made while building it:
+
+- Code lives in `com.triplor.adventure.discovery`. The queries use `JdbcClient` and select columns by name.
+- `lat` and `lng` are required. The date window may span at most 366 days. A `limit` above 50 is capped at 50; a `limit` below 1 is an error.
+- Search and matches leave out trips that have started: `start_date` must be on or after yesterday in UTC, the same rule as for creating a trip. This is one predicate more than the SQL below.
+- `styles` is a comma-separated or repeated parameter, case-insensitive. An unknown style is 400 `VALIDATION_FAILED`.
+- A card carries the place (id, name, region, country, coordinates) and `distanceKm`, rounded to 0.1 km.
+- Matches: the database returns up to 200 candidates (most overlapping days first, then nearest) and `MatchScorer`, a pure Java function, scores and sorts them. Past 200 candidates the ranking covers that subset only.
+- Matches take `radiusKm` (default 50, maximum 500) and `limit` (default 10, maximum 20), and each item carries the total score and its three components. A cancelled or completed adventure has no matches: 409 `ADVENTURE_NOT_OPEN`.
+- In `libs/common`, a query parameter of the wrong type or a missing required one is now 400 `VALIDATION_FAILED` instead of the generic `BAD_REQUEST` code.
+- `infra/scripts/seed-adventures.sh` and `infra/scripts/index-study.sh` (`make seed-adventures`, `make index-study`) produce the data and the measurements.
+
+The index study found that the location GiST index does nearly all the work and that the styles GIN index made every measured query slower. `V5__drop_styles_gin_index.sql` drops it; the M3 migration that created it is left untouched, because an applied migration is never edited. Join requests therefore start at `V6`.
+
 ### Search
 
 `GET /adventures/search?lat&lng&radiusKm&from&to&styles&cursor&limit`. Defaults: radius 50 km (maximum 500), dates from today to 90 days ahead, limit 20 (maximum 50).
@@ -450,6 +466,7 @@ SELECT a.id, a.organizer_id, a.place_id, a.start_date, a.end_date, a.styles,
  CROSS JOIN (SELECT ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography AS origin) q
  WHERE a.status = 'OPEN'
    AND a.organizer_id <> :viewerId
+   AND a.start_date >= :earliestStart
    AND ST_DWithin(a.location, q.origin, :radiusMeters)
    AND a.trip_dates && daterange(:from, :to, '[]')
    AND (:noStyles OR a.styles && CAST(:styles AS text[]))
@@ -458,9 +475,9 @@ SELECT a.id, a.organizer_id, a.place_id, a.start_date, a.end_date, a.styles,
  LIMIT :limitPlusOne;
 ```
 
-- [ ] Keyset pagination: the cursor is the base64url encoding of the last row's `start_date` and `id`. Fetch one extra row to know whether a next page exists. No `OFFSET`. Leave the cursor predicate out of the query for the first page.
-- [ ] Select columns by name. `location` and `trip_dates` are for filtering, not for mapping into Java.
-- [ ] Response shape: `items` and `nextCursor`.
+- [x] Keyset pagination: the cursor is the base64url encoding of the last row's `start_date` and `id`. Fetch one extra row to know whether a next page exists. No `OFFSET`. Leave the cursor predicate out of the query for the first page.
+- [x] Select columns by name. `location` and `trip_dates` are for filtering, not for mapping into Java.
+- [x] Response shape: `items` and `nextCursor`.
 
 ### Matches
 
@@ -474,12 +491,13 @@ SELECT a.id, a.organizer_id, a.place_id, a.start_date, a.end_date, a.styles,
 
 ### Index study
 
-- [ ] A seed script using `generate_series` that inserts 100,000 adventures at random places, with random dates over the next 180 days and one to three random styles.
-- [ ] Run the search with `EXPLAIN (ANALYZE, BUFFERS)` with and without the GiST and GIN indexes. Record both plans and timings in `docs/perf/phase-1-baseline.md`. This is the first measured before-and-after.
+- [x] A seed script using `generate_series` that inserts 100,000 adventures at random places, with random dates over the next 180 days and one to three random styles.
+- [x] Run the search with `EXPLAIN (ANALYZE, BUFFERS)` with and without the GiST and GIN indexes. Record both plans and timings in `docs/perf/phase-1-baseline.md`. This is the first measured before-and-after.
 
 ### Tests
 
-- [ ] Integration: a trip inside the radius is returned and one just outside is not; date ranges that only touch on one day count as overlapping; the style filter matches any shared style; paging through results while new rows are inserted yields no duplicates and no gaps; the caller's own trips are excluded.
+- [x] Unit: cursor encoding and garbage input; search defaults and limits; every component of the match score.
+- [x] Integration: a trip inside the radius is returned and one just outside is not; date ranges that only touch on one day count as overlapping; the style filter matches any shared style; paging through results while new rows are inserted yields no duplicates and no gaps; the caller's own trips are excluded, as are cancelled, full and started ones; matches come back best fit first with the expected scores.
 
 **Done when:** the tests pass and the index study is written up.
 
@@ -491,7 +509,7 @@ SELECT a.id, a.organizer_id, a.place_id, a.start_date, a.end_date, a.styles,
 
 **Goal:** the core invariant. A trip never has more accepted travellers than seats, whatever the concurrency.
 
-### Schema (`V5__join_requests.sql`)
+### Schema (`V6__join_requests.sql`)
 
 ```sql
 CREATE TABLE join_requests (
@@ -723,6 +741,8 @@ Laptop numbers are not production numbers. What matters is the comparison with P
 - **`@Generated` on an immutable entity:** Hibernate 7.4 fails the insert with "Lock mode WRITE not supported for read-only entity". Leave the columns out of the INSERT and read the row back.
 - **Jackson and records:** `SORT_PROPERTIES_ALPHABETICALLY` does not reorder a record's components unless `SORT_CREATOR_PROPERTIES_FIRST` is disabled. The request hash depends on this.
 - **Generated range column:** an update that makes `end_date` earlier than `start_date` fails while computing `trip_dates`, before the named check constraint is reached. The error is still a constraint violation, but it does not name `adventures_dates_chk`.
+- **JIT in `EXPLAIN ANALYZE`:** a plan the planner thinks is expensive gets JIT-compiled, and the compile time (roughly 150 to 200 ms here) is part of "Execution Time". Compare sequential scans with `SET jit = off` as well.
+- **Low-selectivity indexes:** the planner may add an index to a `BitmapAnd` even when it matches half the table. Measure before assuming an index helps.
 - **Generated columns:** if your PostGIS build rejects the `location` expression as not immutable, drop the generated column and set `location` explicitly in the insert statement.
 - **Emulation:** do not fall back to the amd64 `postgis/postgis` image under emulation; it is slow and makes the concurrency tests flaky.
 - **Connection pool:** Hikari defaults to 10 connections, so the 50-thread test queues for connections. That is fine; do not raise the pool to make the test faster.
