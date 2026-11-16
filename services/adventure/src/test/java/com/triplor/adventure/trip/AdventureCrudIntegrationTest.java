@@ -301,6 +301,16 @@ class AdventureCrudIntegrationTest extends AdventureIntegrationTest {
         assertThat(countOrganizedBy(unverified)).isZero();
     }
 
+    @Test
+    void theApiDescriptionIsNotServedOutsideTheLocalProfile() throws Exception {
+        // Without a token the paths are not even public; with one there is nothing there.
+        mvc.perform(MockMvcRequestBuilders.get("/v3/api-docs")).andExpect(status().isUnauthorized());
+        mvc.perform(MockMvcRequestBuilders.get("/v3/api-docs").header(HttpHeaders.AUTHORIZATION, AdventureApi.bearer(asha)))
+                .andExpect(status().isNotFound());
+        mvc.perform(MockMvcRequestBuilders.get("/swagger-ui/index.html").header(HttpHeaders.AUTHORIZATION, AdventureApi.bearer(asha)))
+                .andExpect(status().isNotFound());
+    }
+
     private void expectInvalid(String body) throws Exception {
         api.create(asha, newKey(), body)
                 .andExpect(status().isBadRequest())

@@ -2,7 +2,7 @@
 
 Parent document: [../ARCHITECTURE.md](../ARCHITECTURE.md). Next: [phase-2.md](phase-2.md).
 
-**Status (2026-11-16):** M0 to M6 are built, tested and recorded in their sections below. M7 and M8 are still drafts: their Dockerfiles have not been compiled or run. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
+**Status (2026-11-17):** M0 to M7 are built, tested and recorded in their sections below. M8 is still a draft. Versions were checked on 2026-11-10 against Spring Initializr, Maven Central and Docker Hub.
 
 ## Outcome
 
@@ -698,7 +698,21 @@ Decisions made while building it:
 
 **Goal:** one command starts the whole system; one script proves it works.
 
-- [ ] A Dockerfile per service, built from the repo root, plus a `.dockerignore` that excludes `mobile/`, `docs/`, `.git` and every `target/`.
+**Status:** built and run locally: the three images build, the stack comes up healthy, and the smoke script passes all 37 checks against it. The CI job that does the same on GitHub is written but has not run yet.
+
+Decisions made while building it:
+
+- One Dockerfile for all three services, `services/Dockerfile`, with a `SERVICE` build argument. It already uses Boot's layered extraction (`java -Djarmode=tools -jar application.jar extract --layers`) and a BuildKit cache mount for the Maven repository. The single-stage draft below was skipped.
+- The services are in the Compose profile `app`. `make up` still starts the databases only, for running services from the IDE; `make up-all` builds and starts everything. `make down` and `make reset` stop both.
+- Compose start-up order follows health: identity waits for Postgres, chat for MongoDB and identity, adventure for Postgres, identity and chat.
+- The JWT key is mounted read-only from `.local/`. On Linux the container user (uid 10001) must be able to read it; CI makes its throwaway key world-readable for that reason.
+- The OpenAPI description and Swagger UI are off by default and enabled by the `local` Spring profile, which the Compose stack activates. Shared settings (title, bearer scheme, hiding `CurrentUser`) are an auto-configuration in `libs/common`. springdoc is 3.2.0.
+- Adventure and chat now also check the token's audience (`triplor-api`), not only its signature and expiry.
+- The smoke script runs k6 from the `grafana/k6:1.8.3` image on the Compose network (`make smoke`), so k6 need not be installed. It needs the admin account from `.env` and at least one place.
+- `make sample-places` loads the twenty-city test fixture, so the stack is usable without the GeoNames download. CI uses it.
+- Images are about 600 MB each, most of it the `eclipse-temurin:21-jre` base. A smaller base is a later optimisation.
+
+- [x] A Dockerfile per service, built from the repo root, plus a `.dockerignore` that excludes `mobile/`, `docs/`, `.git` and every `target/`.
 
 ```dockerfile
 # services/identity/Dockerfile  (docker build -f services/identity/Dockerfile .)
@@ -714,14 +728,14 @@ COPY --from=build /src/services/identity/target/*.jar /app/app.jar
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
 ```
 
-- [ ] Once that works, switch to Boot's layered jar extraction so dependency layers are cached between builds. Take the exact command from the container images section of the Boot reference for your version.
-- [ ] Compose: Postgres, MongoDB and the three services. Health checks on every container (`pg_isready`, a `mongosh` ping, `/actuator/health`), and `depends_on` with `condition: service_healthy`. Secrets come from a git-ignored `.env`; commit `.env.example`.
-- [ ] Ports for local use: identity 8081, adventure 8082, chat 8083.
-- [ ] `springdoc` on each service, with the Swagger UI enabled only in the local profile.
-- [ ] `infra/k6/smoke.js`: the full flow from the Outcome section, run once with assertions on every response. It is both the smoke test and the base for the load test.
-- [ ] CI: after `./mvnw verify`, build the images, start Compose and run the smoke script.
+- [x] Once that works, switch to Boot's layered jar extraction so dependency layers are cached between builds. Take the exact command from the container images section of the Boot reference for your version.
+- [x] Compose: Postgres, MongoDB and the three services. Health checks on every container (`pg_isready`, a `mongosh` ping, `/actuator/health`), and `depends_on` with `condition: service_healthy`. Secrets come from a git-ignored `.env`; commit `.env.example`.
+- [x] Ports for local use: identity 8081, adventure 8082, chat 8083.
+- [x] `springdoc` on each service, with the Swagger UI enabled only in the local profile.
+- [x] `infra/k6/smoke.js`: the full flow from the Outcome section, run once with assertions on every response. It is both the smoke test and the base for the load test.
+- [ ] CI: after `./mvnw verify`, build the images, start Compose and run the smoke script. Written as the `smoke` job; not yet run on GitHub.
 
-**Done when:** on a clean checkout, `make keys`, `make up` and the smoke script all succeed.
+**Done when:** on a clean checkout, `make keys`, `make up-all`, `make sample-places` and `make smoke` all succeed.
 
 **Be able to explain:** multi-stage builds and why the runtime image has no JDK; why containers run as a non-root user; what a health check changes about start-up order.
 
