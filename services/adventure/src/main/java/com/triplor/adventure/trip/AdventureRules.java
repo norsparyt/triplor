@@ -55,10 +55,12 @@ public final class AdventureRules {
     }
 
     /**
-     * The earliest start date accepted today. The server keeps time in UTC, but a traveller
-     * west of UTC can still be on the previous calendar day, and "today" must be valid for them.
+     * The earliest start date that still counts as "not started" today. The server keeps time
+     * in UTC, but a traveller west of UTC can still be on the previous calendar day, and
+     * "today" must be valid for them. A trip that starts before this date has begun everywhere:
+     * it cannot be created, and discovery no longer shows it.
      */
-    static LocalDate earliestStartDate(LocalDate todayUtc) {
+    public static LocalDate earliestStartDate(LocalDate todayUtc) {
         return todayUtc.minusDays(1);
     }
 

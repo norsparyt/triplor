@@ -133,6 +133,22 @@ class SharedWebAndSecurityTest {
     }
 
     @Test
+    void aQueryParameterOfTheWrongTypeIsAValidationFailure() throws Exception {
+        mvc.perform(get("/open/page").param("limit", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.detail").value("limit has an invalid value"));
+    }
+
+    @Test
+    void aMissingQueryParameterIsAValidationFailure() throws Exception {
+        mvc.perform(get("/open/page"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.detail").value("limit is required"));
+    }
+
+    @Test
     void frameworkErrorsAlsoCarryACode() throws Exception {
         mvc.perform(post("/open/ping"))
                 .andExpect(status().isMethodNotAllowed())

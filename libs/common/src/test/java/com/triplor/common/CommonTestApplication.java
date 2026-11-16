@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,6 +50,11 @@ public class CommonTestApplication {
         @GetMapping("/open/teapot")
         void teapot() {
             throw new ApiException(HttpStatus.I_AM_A_TEAPOT, "TEAPOT", "I am a teapot");
+        }
+
+        @GetMapping("/open/page")
+        Map<String, Integer> page(@RequestParam("limit") int limit) {
+            return Map.of("limit", limit);
         }
 
         @GetMapping("/open/boom")
